@@ -37,3 +37,10 @@ func GetFileContent(t *testing.T, file string) string {
 
 	return string(b)
 }
+
+func GetFileSize(t *testing.T, file string) int64 {
+	f, err := os.Stat(file)
+	require.Nil(t, err)
+
+	return f.Size()
+}
