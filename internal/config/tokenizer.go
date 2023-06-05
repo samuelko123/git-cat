@@ -60,7 +60,9 @@ func (t *Tokenizer) Tokenize(input string) (_ []Token, err error) {
 		} else if c == '"' {
 			t.handleDoubleQuote(c)
 		} else {
-			t.appendRune(c)
+			// TODO:
+			// if name does not match regex, then throw
+			t.handleOtherChar(c)
 		}
 	}
 
@@ -120,8 +122,7 @@ func (t *Tokenizer) handleLineBreak(c rune) {
 }
 
 func (t *Tokenizer) handleEqualSign(c rune) {
-	if t.currToken.Type == UNDEFINED {
-		t.currToken.Type = NAME
+	if t.currToken.Type == NAME {
 		t.flushCurrToken()
 		t.setCurrToken(VALUE)
 		return
@@ -153,6 +154,14 @@ func (t *Tokenizer) handleDoubleQuote(c rune) {
 	t.appendRune(c)
 }
 
+func (t *Tokenizer) handleOtherChar(c rune) {
+	if t.currToken.Type == UNDEFINED {
+		t.currToken.Type = NAME
+	}
+
+	t.appendRune(c)
+}
+
 func (t *Tokenizer) appendRune(c rune) {
 	t.currToken.Value += string(c)
 }
@@ -160,6 +169,8 @@ func (t *Tokenizer) appendRune(c rune) {
 func (t *Tokenizer) flushCurrToken() {
 	if t.currToken.Type == SECTION {
 		t.currToken.Value = strings.ToLower(strings.TrimFunc(t.currToken.Value, unicode.IsSpace))
+	} else if t.currToken.Type == NAME {
+		t.currToken.Value = strings.TrimFunc(t.currToken.Value, unicode.IsSpace)
 	} else if t.currToken.Type == VALUE {
 		t.currToken.Value = strings.TrimFunc(t.currToken.Value, unicode.IsSpace)
 	} else if t.currToken.Type == UNDEFINED {
