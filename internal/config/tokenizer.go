@@ -44,6 +44,8 @@ type Tokenizer struct {
 }
 
 func (t *Tokenizer) Tokenize(input string) (_ []Token, err error) {
+	// TODO
+	// variable value - escape sequence, backslash next line
 	defer utils.ReturnError(&err)
 
 	t.tokens = make([]Token, 0)
@@ -124,7 +126,7 @@ func (t *Tokenizer) handleClosingSquareBracket(c rune) {
 		t.setCurrToken(UNDEFINED)
 	} else if t.currToken.Type == NAME || t.currToken.Type == SUBSECTION {
 		t.doPanic()
-	} else if t.currToken.Type == COMMENT || t.currToken.Type == VALUE {
+	} else {
 		t.appendRune(c)
 	}
 }
@@ -209,7 +211,10 @@ func (t *Tokenizer) flushCurrToken() {
 		}
 		t.currToken.Value = name
 	} else if t.currToken.Type == VALUE {
-		t.currToken.Value = strings.TrimSpace(t.currToken.Value)
+		value := t.currToken.Value
+		value = strings.TrimSpace(value)
+		value = regexp.MustCompile("^\\\"|\\\"$").ReplaceAllString(value, "")
+		t.currToken.Value = value
 	} else if t.currToken.Type == UNDEFINED {
 		return
 	}
