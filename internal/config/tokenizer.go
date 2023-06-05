@@ -13,7 +13,7 @@ import (
 // https://git-scm.com/docs/git-config#_syntax
 
 var (
-	NAME_REGEX = regexp.MustCompile("^[A-Za-z-]+$")
+	NAME_REGEX = regexp.MustCompile("^[a-z-]+$")
 )
 
 type TokenType string
@@ -189,7 +189,7 @@ func (t *Tokenizer) flushCurrToken() {
 	if t.currToken.Type == SECTION {
 		t.currToken.Value = strings.ToLower(strings.TrimSpace(t.currToken.Value))
 	} else if t.currToken.Type == NAME {
-		name := strings.TrimSpace(t.currToken.Value)
+		name := strings.ToLower(strings.TrimSpace(t.currToken.Value))
 		if !NAME_REGEX.MatchString(name) {
 			panic(errors.New(fmt.Sprintf("invalid variable name %s on line %d", name, t.lineNum)))
 		}

@@ -52,6 +52,11 @@ func TestParse_ValidCases(t *testing.T) {
 			{Type: config.NAME, Value: "ignore-case"},
 			{Type: config.VALUE, Value: "false"},
 		},
+		"[core]\nignoreCase=false": {
+			{Type: config.SECTION, Value: "core"},
+			{Type: config.NAME, Value: "ignorecase"},
+			{Type: config.VALUE, Value: "false"},
+		},
 		"[core]\n \t ignorecase \t = \t true \t ": {
 			{Type: config.SECTION, Value: "core"},
 			{Type: config.NAME, Value: "ignorecase"},
