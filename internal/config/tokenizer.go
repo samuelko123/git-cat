@@ -13,9 +13,10 @@ import (
 // https://git-scm.com/docs/git-config#_syntax
 
 var (
-	SECTION_NAME_REGEX    = regexp.MustCompile("^[a-z-.]+$")
-	SUBSECTION_NAME_REGEX = regexp.MustCompile("^[^\n\u0000]+$")
-	VARIABLE_NAME_REGEX   = regexp.MustCompile("^[a-z-]+$")
+	SECTION_NAME_REGEX           = regexp.MustCompile("^[a-z-.]+$")
+	SUBSECTION_NAME_REGEX        = regexp.MustCompile("^[^\n\u0000]*$")
+	SUBSECTION_NAME_ESCAPE_REGEX = regexp.MustCompile("([\\\\])([^\\\\]|[\\\\])")
+	VARIABLE_NAME_REGEX          = regexp.MustCompile("^[a-z-]+$")
 )
 
 type TokenType string
@@ -161,9 +162,12 @@ func (t *Tokenizer) handleCommentChar(c rune) {
 
 func (t *Tokenizer) handleDoubleQuote(c rune) {
 	if t.currToken.Type == SUBSECTION {
-		t.flushCurrToken()
-		t.setCurrToken(UNDEFINED)
-		return
+		val := t.currToken.Value
+		if val == "" || val[len(val)-1:] != "\\" {
+			t.flushCurrToken()
+			t.setCurrToken(UNDEFINED)
+			return
+		}
 	} else if t.prevToken.Type == SECTION {
 		t.flushCurrToken()
 		t.setCurrToken(SUBSECTION)
@@ -193,7 +197,7 @@ func (t *Tokenizer) flushCurrToken() {
 		}
 		t.currToken.Value = name
 	} else if t.currToken.Type == SUBSECTION {
-		name := t.currToken.Value
+		name := SUBSECTION_NAME_ESCAPE_REGEX.ReplaceAllString(t.currToken.Value, "$2")
 		if !SUBSECTION_NAME_REGEX.MatchString(name) {
 			panic(errors.New(fmt.Sprintf("invalid subsection name %s on line %d", name, t.lineNum)))
 		}

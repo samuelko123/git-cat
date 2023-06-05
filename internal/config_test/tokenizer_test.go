@@ -34,6 +34,22 @@ func TestParse_ValidCases(t *testing.T) {
 			{Type: config.SECTION, Value: "remote"},
 			{Type: config.SUBSECTION, Value: "origin"},
 		},
+		"[remote \"ori\\gin\"]": {
+			{Type: config.SECTION, Value: "remote"},
+			{Type: config.SUBSECTION, Value: "origin"},
+		},
+		"[remote \"ori\\\\gin\"]": {
+			{Type: config.SECTION, Value: "remote"},
+			{Type: config.SUBSECTION, Value: "ori\\gin"},
+		},
+		"[remote \"ori\\\"gin\"]": {
+			{Type: config.SECTION, Value: "remote"},
+			{Type: config.SUBSECTION, Value: "ori\"gin"},
+		},
+		"[remote \"\\\"origin\"]": {
+			{Type: config.SECTION, Value: "remote"},
+			{Type: config.SUBSECTION, Value: "\"origin"},
+		},
 		"[remote \"origin\"];some comments": {
 			{Type: config.SECTION, Value: "remote"},
 			{Type: config.SUBSECTION, Value: "origin"},
@@ -91,6 +107,8 @@ func TestParse_InvalidCases(t *testing.T) {
 		"[remote \"ori\ngin\"]":     "unexpected character on line 1 column 14",
 		"[remote \"origin\" ]":      "unexpected character on line 1 column 18",
 		"[remote \"origin\"\t]":     "unexpected character on line 1 column 18",
+		"[remote \"\"origin\"]":     "unexpected character on line 1 column 19",
+		"[remote \"origin\\\"]":     "unexpected character on line 1 column 19",
 		"[core]\nvar1=true":         "invalid variable name var1 on line 2",
 	}
 
