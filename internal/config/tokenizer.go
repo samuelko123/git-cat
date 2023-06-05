@@ -82,7 +82,11 @@ func (t *Tokenizer) Tokenize(input string) (_ []Token, err error) {
 
 func (t *Tokenizer) handleWhiteSpace(c rune) {
 	if t.currToken.Type == UNDEFINED {
-		return
+		if t.prevToken.Type == SUBSECTION {
+			t.doPanic()
+		} else {
+			return
+		}
 	} else if t.currToken.Type == SECTION {
 		if t.currToken.Value == "" {
 			t.doPanic()
@@ -106,11 +110,12 @@ func (t *Tokenizer) handleOpeningSquareBracket(c rune) {
 
 func (t *Tokenizer) handleClosingSquareBracket(c rune) {
 	if t.currToken.Type == UNDEFINED {
-		return
+		if t.prevToken.Type == SECTION {
+			t.doPanic()
+		}
 	} else if t.currToken.Type == SECTION {
 		t.flushCurrToken()
 		t.setCurrToken(UNDEFINED)
-		return
 	} else if t.currToken.Type == NAME || t.currToken.Type == SUBSECTION {
 		t.doPanic()
 	} else if t.currToken.Type == COMMENT || t.currToken.Type == VALUE {

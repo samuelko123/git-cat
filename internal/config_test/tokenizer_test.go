@@ -58,23 +58,27 @@ func TestParse_ValidCases(t *testing.T) {
 		tokenizer := config.Tokenizer{}
 
 		tokens, err := tokenizer.Tokenize(input)
-		require.Nil(t, err)
+		require.Nil(t, err, input)
 		assert.Equal(t, expected, tokens, "This input should not fail: "+input)
 	}
 }
 
 func TestParse_InvalidCases(t *testing.T) {
 	testcases := map[string]string{
-		"abc":        "config should begin with the [ character, got a",
-		"[ remote]":  "error: unexpected character on line 1 column 3",
-		"[\tremote]": "error: unexpected character on line 1 column 3",
+		"abc":                   "config should begin with the [ character, got a",
+		"[ remote]":             "error: unexpected character on line 1 column 3",
+		"[\tremote]":            "error: unexpected character on line 1 column 3",
+		"[remote ]":             "error: unexpected character on line 1 column 10",
+		"[remote\t]":            "error: unexpected character on line 1 column 10",
+		"[remote \"origin\" ]":  "error: unexpected character on line 1 column 18",
+		"[remote \"origin\"\t]": "error: unexpected character on line 1 column 18",
 	}
 
 	for input, expected := range testcases {
 		tokenizer := config.Tokenizer{}
 
 		_, err := tokenizer.Tokenize(input)
-		require.NotNil(t, err)
+		require.NotNil(t, err, input)
 		assert.Equal(t, expected, err.Error(), "This input gives incorrect error message: "+input)
 	}
 }
