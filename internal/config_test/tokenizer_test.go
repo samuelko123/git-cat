@@ -47,6 +47,11 @@ func TestParse_ValidCases(t *testing.T) {
 			{Type: config.NAME, Value: "ignorecase"},
 			{Type: config.VALUE, Value: "true"},
 		},
+		"[core]\nignore-case=false": {
+			{Type: config.SECTION, Value: "core"},
+			{Type: config.NAME, Value: "ignore-case"},
+			{Type: config.VALUE, Value: "false"},
+		},
 		"[core]\n \t ignorecase \t = \t true \t ": {
 			{Type: config.SECTION, Value: "core"},
 			{Type: config.NAME, Value: "ignorecase"},
@@ -66,12 +71,13 @@ func TestParse_ValidCases(t *testing.T) {
 func TestParse_InvalidCases(t *testing.T) {
 	testcases := map[string]string{
 		"abc":                   "config should begin with the [ character, got a",
-		"[ remote]":             "error: unexpected character on line 1 column 3",
-		"[\tremote]":            "error: unexpected character on line 1 column 3",
-		"[remote ]":             "error: unexpected character on line 1 column 10",
-		"[remote\t]":            "error: unexpected character on line 1 column 10",
-		"[remote \"origin\" ]":  "error: unexpected character on line 1 column 18",
-		"[remote \"origin\"\t]": "error: unexpected character on line 1 column 18",
+		"[ remote]":             "unexpected character on line 1 column 3",
+		"[\tremote]":            "unexpected character on line 1 column 3",
+		"[remote ]":             "unexpected character on line 1 column 10",
+		"[remote\t]":            "unexpected character on line 1 column 10",
+		"[remote \"origin\" ]":  "unexpected character on line 1 column 18",
+		"[remote \"origin\"\t]": "unexpected character on line 1 column 18",
+		"[core]\nvar1=true":     "invalid variable name var1 on line 2",
 	}
 
 	for input, expected := range testcases {

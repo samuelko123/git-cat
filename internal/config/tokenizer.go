@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode"
 
@@ -10,6 +11,10 @@ import (
 )
 
 // https://git-scm.com/docs/git-config#_syntax
+
+var (
+	NAME_REGEX = regexp.MustCompile("^[A-Za-z-]+$")
+)
 
 type TokenType string
 
@@ -184,7 +189,11 @@ func (t *Tokenizer) flushCurrToken() {
 	if t.currToken.Type == SECTION {
 		t.currToken.Value = strings.ToLower(strings.TrimSpace(t.currToken.Value))
 	} else if t.currToken.Type == NAME {
-		t.currToken.Value = strings.TrimSpace(t.currToken.Value)
+		name := strings.TrimSpace(t.currToken.Value)
+		if !NAME_REGEX.MatchString(name) {
+			panic(errors.New(fmt.Sprintf("invalid variable name %s on line %d", name, t.lineNum)))
+		}
+		t.currToken.Value = name
 	} else if t.currToken.Type == VALUE {
 		t.currToken.Value = strings.TrimSpace(t.currToken.Value)
 	} else if t.currToken.Type == UNDEFINED {
@@ -203,5 +212,5 @@ func (t *Tokenizer) setCurrToken(tokenType TokenType) {
 }
 
 func (t *Tokenizer) doPanic() {
-	panic(errors.New(fmt.Sprintf("error: unexpected character on line %d column %d", t.lineNum, t.colNum)))
+	panic(errors.New(fmt.Sprintf("unexpected character on line %d column %d", t.lineNum, t.colNum)))
 }
