@@ -13,7 +13,9 @@ import (
 // https://git-scm.com/docs/git-config#_syntax
 
 var (
-	NAME_REGEX = regexp.MustCompile("^[a-z-]+$")
+	SECTION_NAME_REGEX    = regexp.MustCompile("^[a-z-.]+$")
+	SUBSECTION_NAME_REGEX = regexp.MustCompile("^[^\n\u0000]+$")
+	VARIABLE_NAME_REGEX   = regexp.MustCompile("^[a-z-]+$")
 )
 
 type TokenType string
@@ -74,8 +76,6 @@ func (t *Tokenizer) Tokenize(input string) (_ []Token, err error) {
 		} else if c == '"' {
 			t.handleDoubleQuote(c)
 		} else {
-			// TODO:
-			// if name does not match regex, then throw
 			t.handleOtherChar(c)
 		}
 	}
@@ -175,7 +175,7 @@ func (t *Tokenizer) handleDoubleQuote(c rune) {
 
 func (t *Tokenizer) handleOtherChar(c rune) {
 	if t.currToken.Type == UNDEFINED {
-		t.currToken.Type = NAME
+		t.setCurrToken(NAME)
 	}
 
 	t.appendRune(c)
@@ -187,10 +187,20 @@ func (t *Tokenizer) appendRune(c rune) {
 
 func (t *Tokenizer) flushCurrToken() {
 	if t.currToken.Type == SECTION {
-		t.currToken.Value = strings.ToLower(strings.TrimSpace(t.currToken.Value))
+		name := strings.ToLower(strings.TrimSpace(t.currToken.Value))
+		if !SECTION_NAME_REGEX.MatchString(name) {
+			panic(errors.New(fmt.Sprintf("invalid section name %s on line %d", name, t.lineNum)))
+		}
+		t.currToken.Value = name
+	} else if t.currToken.Type == SUBSECTION {
+		name := t.currToken.Value
+		if !SUBSECTION_NAME_REGEX.MatchString(name) {
+			panic(errors.New(fmt.Sprintf("invalid subsection name %s on line %d", name, t.lineNum)))
+		}
+		t.currToken.Value = name
 	} else if t.currToken.Type == NAME {
 		name := strings.ToLower(strings.TrimSpace(t.currToken.Value))
-		if !NAME_REGEX.MatchString(name) {
+		if !VARIABLE_NAME_REGEX.MatchString(name) {
 			panic(errors.New(fmt.Sprintf("invalid variable name %s on line %d", name, t.lineNum)))
 		}
 		t.currToken.Value = name
