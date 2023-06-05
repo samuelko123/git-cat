@@ -5,12 +5,12 @@ import (
 
 	"github.com/samuelko123/git-cat/internal/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestParse(t *testing.T) {
+func TestParse_ValidCases(t *testing.T) {
 	testcases := map[string][]config.Token{
-		"":    nil,
-		"abc": nil,
+		"": {},
 		"[remote]": {
 			{Type: config.SECTION, Value: "remote"},
 		},
@@ -20,8 +20,6 @@ func TestParse(t *testing.T) {
 		" \t [remote] \t ": {
 			{Type: config.SECTION, Value: "remote"},
 		},
-		"[ remote ]":   nil,
-		"[\tremote\t]": nil,
 		"[remote \"origin\"]": {
 			{Type: config.SECTION, Value: "remote"},
 			{Type: config.SUBSECTION, Value: "origin"},
@@ -44,8 +42,6 @@ func TestParse(t *testing.T) {
 			{Type: config.SECTION, Value: "remote"},
 			{Type: config.SUBSECTION, Value: " OriGin\t"},
 		},
-		"[ remote \"origin\" ]":   nil,
-		"[\tremote \"origin\"\t]": nil,
 		"[core]\nignorecase=true": {
 			{Type: config.SECTION, Value: "core"},
 			{Type: config.NAME, Value: "ignorecase"},
@@ -62,10 +58,23 @@ func TestParse(t *testing.T) {
 		tokenizer := config.Tokenizer{}
 
 		tokens, err := tokenizer.Tokenize(input)
-		if expected == nil {
-			assert.NotNil(t, err, "This input should fail: "+input)
-		} else {
-			assert.Equal(t, expected, tokens, "This input should not fail: "+input)
-		}
+		require.Nil(t, err)
+		assert.Equal(t, expected, tokens, "This input should not fail: "+input)
+	}
+}
+
+func TestParse_InvalidCases(t *testing.T) {
+	testcases := map[string]string{
+		"abc":        "config should begin with the [ character, got a",
+		"[ remote]":  "error: unexpected character on line 1 column 3",
+		"[\tremote]": "error: unexpected character on line 1 column 3",
+	}
+
+	for input, expected := range testcases {
+		tokenizer := config.Tokenizer{}
+
+		_, err := tokenizer.Tokenize(input)
+		require.NotNil(t, err)
+		assert.Equal(t, expected, err.Error(), "This input gives incorrect error message: "+input)
 	}
 }

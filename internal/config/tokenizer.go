@@ -38,15 +38,19 @@ type Tokenizer struct {
 func (t *Tokenizer) Tokenize(input string) (_ []Token, err error) {
 	defer utils.ReturnError(&err)
 
-	firstChar := strings.TrimFunc(input, unicode.IsSpace)[0]
-	if firstChar != '[' {
-		panic(errors.New(fmt.Sprintf("config should begin with the [ character, got %v", firstChar)))
-	}
-
 	t.tokens = make([]Token, 0)
 	t.setCurrToken(UNDEFINED)
 	t.lineNum = 1
 	t.colNum = 1
+
+	if strings.TrimSpace(input) == "" {
+		return t.tokens, nil
+	}
+
+	firstChar := strings.TrimSpace(input)[0]
+	if firstChar != '[' {
+		panic(errors.New("config should begin with the [ character, got " + string(firstChar)))
+	}
 
 	for _, c := range input {
 		t.colNum++
@@ -173,11 +177,11 @@ func (t *Tokenizer) appendRune(c rune) {
 
 func (t *Tokenizer) flushCurrToken() {
 	if t.currToken.Type == SECTION {
-		t.currToken.Value = strings.ToLower(strings.TrimFunc(t.currToken.Value, unicode.IsSpace))
+		t.currToken.Value = strings.ToLower(strings.TrimSpace(t.currToken.Value))
 	} else if t.currToken.Type == NAME {
-		t.currToken.Value = strings.TrimFunc(t.currToken.Value, unicode.IsSpace)
+		t.currToken.Value = strings.TrimSpace(t.currToken.Value)
 	} else if t.currToken.Type == VALUE {
-		t.currToken.Value = strings.TrimFunc(t.currToken.Value, unicode.IsSpace)
+		t.currToken.Value = strings.TrimSpace(t.currToken.Value)
 	} else if t.currToken.Type == UNDEFINED {
 		return
 	}
