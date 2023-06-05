@@ -9,6 +9,8 @@ import (
 
 func TestParse(t *testing.T) {
 	testcases := map[string][]config.Token{
+		"":    nil,
+		"abc": nil,
 		"[remote]": {
 			{Type: config.SECTION, Value: "remote"},
 		},
@@ -44,11 +46,13 @@ func TestParse(t *testing.T) {
 		},
 		"[ remote \"origin\" ]":   nil,
 		"[\tremote \"origin\"\t]": nil,
-		"ignorecase=true": {
+		"[core]\nignorecase=true": {
+			{Type: config.SECTION, Value: "core"},
 			{Type: config.NAME, Value: "ignorecase"},
 			{Type: config.VALUE, Value: "true"},
 		},
-		" \t ignorecase \t = \t true \t ": {
+		"[core]\n \t ignorecase \t = \t true \t ": {
+			{Type: config.SECTION, Value: "core"},
 			{Type: config.NAME, Value: "ignorecase"},
 			{Type: config.VALUE, Value: "true"},
 		},

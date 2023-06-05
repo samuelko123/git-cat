@@ -38,6 +38,11 @@ type Tokenizer struct {
 func (t *Tokenizer) Tokenize(input string) (_ []Token, err error) {
 	defer utils.ReturnError(&err)
 
+	firstChar := strings.TrimFunc(input, unicode.IsSpace)[0]
+	if firstChar != '[' {
+		panic(errors.New(fmt.Sprintf("config should begin with the [ character, got %v", firstChar)))
+	}
+
 	t.tokens = make([]Token, 0)
 	t.setCurrToken(UNDEFINED)
 	t.lineNum = 1
