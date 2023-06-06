@@ -211,10 +211,23 @@ func (t *Tokenizer) flushCurrToken() {
 		}
 		t.currToken.Value = name
 	} else if t.currToken.Type == VALUE {
-		value := t.currToken.Value
-		value = strings.TrimSpace(value)
-		value = regexp.MustCompile("^\\\"|\\\"$").ReplaceAllString(value, "")
-		t.currToken.Value = value
+		val := t.currToken.Value
+		val = strings.TrimSpace(val)
+		if len(val) >= 2 && val[0] == '"' && val[len(val)-1] == '"' {
+			val = val[1 : len(val)-1]
+		}
+
+		if regexp.MustCompile("[^\\\\][\"]|^[\"]").FindString(val) != "" {
+			panic(errors.New(fmt.Sprintf("invalid variable value %s on line %d", val, t.lineNum)))
+		}
+
+		val = strings.ReplaceAll(val, "\\\\", "\\")
+		val = strings.ReplaceAll(val, "\\\"", "\"")
+		val = strings.ReplaceAll(val, "\\n", "\n")
+		val = strings.ReplaceAll(val, "\\t", "\t")
+		val = strings.ReplaceAll(val, "\\b", "\b")
+
+		t.currToken.Value = val
 	} else if t.currToken.Type == UNDEFINED {
 		return
 	}

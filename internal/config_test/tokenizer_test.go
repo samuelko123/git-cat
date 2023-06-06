@@ -89,6 +89,16 @@ func TestParse_ValidCases(t *testing.T) {
 			{Type: config.NAME, Value: "ignorecase"},
 			{Type: config.VALUE, Value: " true "},
 		},
+		"[core]\nignorecase = \\": {
+			{Type: config.SECTION, Value: "core"},
+			{Type: config.NAME, Value: "ignorecase"},
+			{Type: config.VALUE, Value: "\\"},
+		},
+		"[core]\nignorecase = \\\"": {
+			{Type: config.SECTION, Value: "core"},
+			{Type: config.NAME, Value: "ignorecase"},
+			{Type: config.VALUE, Value: "\""},
+		},
 	}
 
 	for input, expected := range testcases {
@@ -115,6 +125,7 @@ func TestParse_InvalidCases(t *testing.T) {
 		"[remote \"\"origin\"]":     "unexpected character on line 1 column 19",
 		"[remote \"origin\\\"]":     "unexpected character on line 1 column 19",
 		"[core]\nvar1=true":         "invalid variable name var1 on line 2",
+		"[core]\nignorecase = \"":   "invalid variable value \" on line 2",
 	}
 
 	for input, expected := range testcases {
