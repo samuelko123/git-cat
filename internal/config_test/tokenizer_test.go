@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/samuelko123/git-cat/internal/config"
@@ -8,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParse_ValidCases(t *testing.T) {
+func TestTokenize_ValidCases(t *testing.T) {
 	testcases := map[string][]config.Token{
 		"": {},
 		"[remote]": {
@@ -110,7 +111,7 @@ func TestParse_ValidCases(t *testing.T) {
 	}
 }
 
-func TestParse_InvalidCases(t *testing.T) {
+func TestTokenize_InvalidCases(t *testing.T) {
 	testcases := map[string]string{
 		"abc":                       "config should begin with the [ character, got a",
 		"[ remote]":                 "unexpected character on line 1 column 3",
@@ -125,14 +126,15 @@ func TestParse_InvalidCases(t *testing.T) {
 		"[remote \"\"origin\"]":     "unexpected character on line 1 column 19",
 		"[remote \"origin\\\"]":     "unexpected character on line 1 column 19",
 		"[core]\nvar1=true":         "invalid variable name var1 on line 2",
+		"[core]\nignore case = \"":  "invalid variable name ignore case on line 2",
 		"[core]\nignorecase = \"":   "invalid variable value \" on line 2",
 	}
 
 	for input, expected := range testcases {
 		tokenizer := config.Tokenizer{}
 
-		_, err := tokenizer.Tokenize(input)
-		require.NotNil(t, err, input)
+		output, err := tokenizer.Tokenize(input)
+		require.NotNil(t, err, fmt.Sprintf("This input should fail:\n%s\n\nBut got output:\n%v", input, output))
 		assert.Equal(t, expected, err.Error(), "This input gives incorrect error message: "+input)
 	}
 }

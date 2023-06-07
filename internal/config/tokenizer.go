@@ -45,7 +45,11 @@ type Tokenizer struct {
 
 func (t *Tokenizer) Tokenize(input string) (_ []Token, err error) {
 	// TODO
-	// variable value - escape sequence, backslash next line
+	// variable value
+	// - test more escape sequences
+	// - do backslash to next line stuff
+	// - get raw string - validation should be another task
+	// - solve complexity
 	defer utils.ReturnError(&err)
 
 	t.tokens = make([]Token, 0)
@@ -215,6 +219,10 @@ func (t *Tokenizer) flushCurrToken() {
 		val = strings.TrimSpace(val)
 		if len(val) >= 2 && val[0] == '"' && val[len(val)-1] == '"' {
 			val = val[1 : len(val)-1]
+		}
+
+		if regexp.MustCompile("[^\\\\][\"]|^[\"]").FindString(val) != "" {
+			panic(errors.New(fmt.Sprintf("invalid variable value %s on line %d", val, t.lineNum)))
 		}
 
 		if regexp.MustCompile("[^\\\\][\"]|^[\"]").FindString(val) != "" {
