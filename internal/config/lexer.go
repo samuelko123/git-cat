@@ -41,7 +41,7 @@ var runeMap = map[rune]TokenType{
 }
 
 var specialRunes = []rune{
-	'[', ']', '"', '=', ';', '#', '\\',
+	'[', ']', '"', '\n', '=', ';', '#', '\\',
 }
 
 type Token struct {
@@ -90,29 +90,22 @@ func (l *Lexer) Lex() []Token {
 			panic(err)
 		}
 
-		if c == '\n' {
-			if expr != "" {
-				tokens = append(tokens, NewToken(exprPos, EXPRESSION, expr))
-			}
-			expr = ""
-
-			pos := l.pos
-			l.pos.Line += 1
-			l.pos.Column = 0
-			tokens = append(tokens, NewToken(pos, runeMap[c], string(c)))
-		}
-
-		if unicode.IsSpace(c) && expr == "" {
-			continue
-		}
-
 		if slices.Contains(specialRunes, c) {
 			if expr != "" {
 				tokens = append(tokens, NewToken(exprPos, EXPRESSION, expr))
 			}
 			expr = ""
 
-			tokens = append(tokens, NewToken(l.pos, runeMap[c], string(c)))
+			if c == '\n' {
+				pos := l.pos
+				l.pos.Line += 1
+				l.pos.Column = 0
+				tokens = append(tokens, NewToken(pos, runeMap[c], string(c)))
+			} else {
+				tokens = append(tokens, NewToken(l.pos, runeMap[c], string(c)))
+			}
+		} else if unicode.IsSpace(c) && expr == "" {
+			continue
 		} else {
 			if expr == "" {
 				exprPos = l.pos
