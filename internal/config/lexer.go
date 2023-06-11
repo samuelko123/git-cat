@@ -100,6 +100,8 @@ func (l *Lexer) getNextToken() Token {
 		default:
 			if unicode.IsSpace(c) {
 				continue
+			} else {
+				return l.getNextExprToken()
 			}
 		}
 	}
@@ -110,4 +112,37 @@ func (l *Lexer) readNextRune() (rune, error) {
 	l.pos.Column += 1
 
 	return c, err
+}
+
+func (l *Lexer) unreadRune() {
+	l.reader.UnreadRune()
+	l.pos.Column -= 1
+}
+
+func (l *Lexer) getNextExprToken() Token {
+	startPos := l.pos
+	literal := ""
+
+	l.unreadRune()
+
+	for {
+		c, err := l.readNextRune()
+
+		if err != nil {
+			if err == io.EOF {
+				l.unreadRune()
+				return NewToken(startPos, EXPRESSION, literal)
+			}
+
+			panic(err)
+		}
+
+		switch c {
+		case '"', '\n':
+			l.unreadRune()
+			return NewToken(startPos, EXPRESSION, literal)
+		default:
+			literal += string(c)
+		}
+	}
 }
