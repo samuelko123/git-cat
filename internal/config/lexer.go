@@ -18,27 +18,14 @@ const (
 	EOF TokenType = iota
 	EXPRESSION
 	LEFT_SQUARE_BRACKET
-	RIGHT_SQUARE_BRAKCET
+	RIGHT_SQUARE_BRACKET
 	DOUBLE_QUOTE
 	LINE_BREAK
 	EQUAL_SIGN
 	SEMI_COLON
 	HASH_SIGN
+	BACKSLASH
 )
-
-var TOKEN_TYPES = []rune{
-	LEFT_SQUARE_BRACKET:  '[',
-	RIGHT_SQUARE_BRAKCET: ']',
-	DOUBLE_QUOTE:         '"',
-	LINE_BREAK:           '\n',
-	EQUAL_SIGN:           '=',
-	SEMI_COLON:           ';',
-	HASH_SIGN:            '#',
-}
-
-func (t TokenType) Rune() rune {
-	return TOKEN_TYPES[t]
-}
 
 type Token struct {
 	Pos    Position
@@ -71,15 +58,6 @@ func (l *Lexer) Lex() []Token {
 	for {
 		c, err := l.readNextRune()
 
-		if c == LINE_BREAK.Rune() {
-			l.pos.Line += 1
-			l.pos.Column = 0
-		}
-
-		if unicode.IsSpace(c) {
-			continue
-		}
-
 		if err != nil {
 			if err == io.EOF {
 				l.pushToken(NewToken(l.pos, EOF, ""))
@@ -87,6 +65,39 @@ func (l *Lexer) Lex() []Token {
 			}
 
 			panic(err)
+		}
+
+		switch c {
+		case '[':
+			l.pushToken(NewToken(l.pos, LEFT_SQUARE_BRACKET, "["))
+			continue
+		case ']':
+			l.pushToken(NewToken(l.pos, RIGHT_SQUARE_BRACKET, "]"))
+			continue
+		case '"':
+			l.pushToken(NewToken(l.pos, DOUBLE_QUOTE, "\""))
+			continue
+		case '\n':
+			l.pos.Line += 1
+			l.pos.Column = 0
+			l.pushToken(NewToken(l.pos, LINE_BREAK, "\n"))
+			continue
+		case '=':
+			l.pushToken(NewToken(l.pos, EQUAL_SIGN, "="))
+			continue
+		case ';':
+			l.pushToken(NewToken(l.pos, SEMI_COLON, ";"))
+			continue
+		case '#':
+			l.pushToken(NewToken(l.pos, HASH_SIGN, "#"))
+			continue
+		case '\\':
+			l.pushToken(NewToken(l.pos, BACKSLASH, "\\"))
+			continue
+		default:
+			if unicode.IsSpace(c) {
+				continue
+			}
 		}
 	}
 }
