@@ -5,6 +5,8 @@ import (
 	"io"
 	"strings"
 	"unicode"
+
+	"golang.org/x/exp/slices"
 )
 
 type Position struct {
@@ -36,6 +38,10 @@ var runeMap = map[rune]TokenType{
 	';':  SEMI_COLON,
 	'#':  HASH_SIGN,
 	'\\': BACKSLASH,
+}
+
+var specialRunes = []rune{
+	'[', ']', '"', '=', ';', '#', '\\',
 }
 
 type Token struct {
@@ -80,23 +86,24 @@ func (l *Lexer) Lex() []Token {
 			panic(err)
 		}
 
-		switch c {
-		case '\n':
+		if c == '\n' {
 			pos := l.pos
 			l.pos.Line += 1
 			l.pos.Column = 0
 			t := NewToken(pos, runeMap[c], string(c))
 			tokens = append(tokens, t)
-		case '[', ']', '"', '=', ';', '#', '\\':
+		}
+
+		if unicode.IsSpace(c) {
+			continue
+		}
+
+		if slices.Contains(specialRunes, c) {
 			t := NewToken(l.pos, runeMap[c], string(c))
 			tokens = append(tokens, t)
-		default:
-			if unicode.IsSpace(c) {
-				continue
-			} else {
-				t := l.getNextExprToken()
-				tokens = append(tokens, t)
-			}
+		} else {
+			t := l.getNextExprToken()
+			tokens = append(tokens, t)
 		}
 	}
 }
