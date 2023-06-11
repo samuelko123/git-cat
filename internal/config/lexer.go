@@ -76,18 +76,14 @@ func (l *Lexer) Lex() []Token {
 	var exprPos Position
 
 	for {
-		c, err := l.readNextRune()
+		c := l.readNextRune()
 
-		if err != nil {
-			if err == io.EOF {
-				if expr != "" {
-					l.tokens = append(l.tokens, NewToken(exprPos, EXPRESSION, expr))
-				}
-				l.tokens = append(l.tokens, NewToken(l.pos, EOF, ""))
-				return l.tokens
+		if c == rune(0) {
+			if expr != "" {
+				l.tokens = append(l.tokens, NewToken(exprPos, EXPRESSION, expr))
 			}
-
-			panic(err)
+			l.tokens = append(l.tokens, NewToken(l.pos, EOF, ""))
+			return l.tokens
 		}
 
 		if slices.Contains(specialRunes, c) {
@@ -115,11 +111,15 @@ func (l *Lexer) Lex() []Token {
 	}
 }
 
-func (l *Lexer) readNextRune() (rune, error) {
+func (l *Lexer) readNextRune() rune {
 	c, _, err := l.reader.ReadRune()
 	l.pos.Column += 1
 
-	return c, err
+	if err != nil && err != io.EOF {
+		panic(err)
+	}
+
+	return c
 }
 
 func (l *Lexer) unreadRune() {
