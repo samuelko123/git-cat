@@ -2,7 +2,6 @@ package config
 
 import (
 	"bufio"
-	"io"
 	"strings"
 	"unicode"
 
@@ -99,12 +98,8 @@ func (l *Lexer) Lex() []Token {
 }
 
 func (l *Lexer) readNextRune() rune {
-	c, _, err := l.reader.ReadRune()
+	c, _, _ := l.reader.ReadRune()
 	l.pos.Column += 1
-
-	if err != nil && err != io.EOF {
-		panic(err)
-	}
 
 	return c
 }
