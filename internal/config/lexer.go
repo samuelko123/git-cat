@@ -57,6 +57,7 @@ func NewToken(pos Position, tType TokenType, tValue string) Token {
 type Lexer struct {
 	pos    Position
 	reader *bufio.Reader
+	tokens []Token
 }
 
 func NewLexer(input string) *Lexer {
@@ -66,7 +67,7 @@ func NewLexer(input string) *Lexer {
 	}
 }
 
-func (l *Lexer) Lex() Token {
+func (l *Lexer) Lex() []Token {
 	for {
 		c, err := l.readNextRune()
 
@@ -81,7 +82,8 @@ func (l *Lexer) Lex() Token {
 
 		if err != nil {
 			if err == io.EOF {
-				return NewToken(l.pos, EOF, "")
+				l.pushToken(NewToken(l.pos, EOF, ""))
+				return l.tokens
 			}
 
 			panic(err)
@@ -94,4 +96,8 @@ func (l *Lexer) readNextRune() (rune, error) {
 	l.pos.Column += 1
 
 	return c, err
+}
+
+func (l *Lexer) pushToken(t Token) {
+	l.tokens = append(l.tokens, t)
 }

@@ -8,10 +8,10 @@ import (
 )
 
 func TestLex(t *testing.T) {
-	testcases := map[string]config.Token{
-		"":             config.NewToken(config.Position{Line: 1, Column: 1}, config.EOF, ""),
-		"♥":            config.NewToken(config.Position{Line: 1, Column: 2}, config.EOF, ""),
-		"  \n \t \n  ": config.NewToken(config.Position{Line: 3, Column: 3}, config.EOF, ""),
+	testcases := map[string][]config.Token{
+		"":             {config.NewToken(config.Position{Line: 1, Column: 1}, config.EOF, "")},
+		"♥":            {config.NewToken(config.Position{Line: 1, Column: 2}, config.EOF, "")},
+		"  \n \t \n  ": {config.NewToken(config.Position{Line: 3, Column: 3}, config.EOF, "")},
 	}
 
 	for input, expected := range testcases {
