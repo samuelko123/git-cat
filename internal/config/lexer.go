@@ -57,21 +57,13 @@ func (l *Lexer) Lex() []Token {
 	tokens := make([]Token, 0)
 
 	for {
-		t := l.getNextToken()
-		tokens = append(tokens, t)
-		if t.TType == EOF {
-			return tokens
-		}
-	}
-}
-
-func (l *Lexer) getNextToken() Token {
-	for {
 		c, err := l.readNextRune()
 
 		if err != nil {
 			if err == io.EOF {
-				return NewToken(l.pos, EOF, "")
+				t := NewToken(l.pos, EOF, "")
+				tokens = append(tokens, t)
+				return tokens
 			}
 
 			panic(err)
@@ -79,29 +71,38 @@ func (l *Lexer) getNextToken() Token {
 
 		switch c {
 		case '[':
-			return NewToken(l.pos, LEFT_SQUARE_BRACKET, "[")
+			t := NewToken(l.pos, LEFT_SQUARE_BRACKET, "[")
+			tokens = append(tokens, t)
 		case ']':
-			return NewToken(l.pos, RIGHT_SQUARE_BRACKET, "]")
+			t := NewToken(l.pos, RIGHT_SQUARE_BRACKET, "]")
+			tokens = append(tokens, t)
 		case '"':
-			return NewToken(l.pos, DOUBLE_QUOTE, "\"")
+			t := NewToken(l.pos, DOUBLE_QUOTE, "\"")
+			tokens = append(tokens, t)
 		case '\n':
 			pos := l.pos
 			l.pos.Line += 1
 			l.pos.Column = 0
-			return NewToken(pos, LINE_BREAK, "\n")
+			t := NewToken(pos, LINE_BREAK, "\n")
+			tokens = append(tokens, t)
 		case '=':
-			return NewToken(l.pos, EQUAL_SIGN, "=")
+			t := NewToken(l.pos, EQUAL_SIGN, "=")
+			tokens = append(tokens, t)
 		case ';':
-			return NewToken(l.pos, SEMI_COLON, ";")
+			t := NewToken(l.pos, SEMI_COLON, ";")
+			tokens = append(tokens, t)
 		case '#':
-			return NewToken(l.pos, HASH_SIGN, "#")
+			t := NewToken(l.pos, HASH_SIGN, "#")
+			tokens = append(tokens, t)
 		case '\\':
-			return NewToken(l.pos, BACKSLASH, "\\")
+			t := NewToken(l.pos, BACKSLASH, "\\")
+			tokens = append(tokens, t)
 		default:
 			if unicode.IsSpace(c) {
 				continue
 			} else {
-				return l.getNextExprToken()
+				t := l.getNextExprToken()
+				tokens = append(tokens, t)
 			}
 		}
 	}
