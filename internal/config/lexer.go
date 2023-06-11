@@ -71,6 +71,8 @@ func NewLexer(input string) *Lexer {
 }
 
 func (l *Lexer) Lex() []Token {
+	expr := ""
+	var exprPos Position
 	tokens := make([]Token, 0)
 
 	for {
@@ -78,8 +80,10 @@ func (l *Lexer) Lex() []Token {
 
 		if err != nil {
 			if err == io.EOF {
-				t := NewToken(l.pos, EOF, "")
-				tokens = append(tokens, t)
+				if expr != "" {
+					tokens = append(tokens, NewToken(exprPos, EXPRESSION, expr))
+				}
+				tokens = append(tokens, NewToken(l.pos, EOF, ""))
 				return tokens
 			}
 
@@ -87,23 +91,33 @@ func (l *Lexer) Lex() []Token {
 		}
 
 		if c == '\n' {
+			if expr != "" {
+				tokens = append(tokens, NewToken(exprPos, EXPRESSION, expr))
+			}
+			expr = ""
+
 			pos := l.pos
 			l.pos.Line += 1
 			l.pos.Column = 0
-			t := NewToken(pos, runeMap[c], string(c))
-			tokens = append(tokens, t)
+			tokens = append(tokens, NewToken(pos, runeMap[c], string(c)))
 		}
 
-		if unicode.IsSpace(c) {
+		if unicode.IsSpace(c) && expr == "" {
 			continue
 		}
 
 		if slices.Contains(specialRunes, c) {
-			t := NewToken(l.pos, runeMap[c], string(c))
-			tokens = append(tokens, t)
+			if expr != "" {
+				tokens = append(tokens, NewToken(exprPos, EXPRESSION, expr))
+			}
+			expr = ""
+
+			tokens = append(tokens, NewToken(l.pos, runeMap[c], string(c)))
 		} else {
-			t := l.getNextExprToken()
-			tokens = append(tokens, t)
+			if expr == "" {
+				exprPos = l.pos
+			}
+			expr += string(c)
 		}
 	}
 }
@@ -118,32 +132,4 @@ func (l *Lexer) readNextRune() (rune, error) {
 func (l *Lexer) unreadRune() {
 	l.reader.UnreadRune()
 	l.pos.Column -= 1
-}
-
-func (l *Lexer) getNextExprToken() Token {
-	startPos := l.pos
-	literal := ""
-
-	l.unreadRune()
-
-	for {
-		c, err := l.readNextRune()
-
-		if err != nil {
-			if err == io.EOF {
-				l.unreadRune()
-				return NewToken(startPos, EXPRESSION, literal)
-			}
-
-			panic(err)
-		}
-
-		switch c {
-		case '"', '\n':
-			l.unreadRune()
-			return NewToken(startPos, EXPRESSION, literal)
-		default:
-			literal += string(c)
-		}
-	}
 }
