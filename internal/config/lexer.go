@@ -61,6 +61,7 @@ func NewToken(pos Position, tType TokenType, tValue string) Token {
 type Lexer struct {
 	pos    Position
 	reader *bufio.Reader
+	tokens []Token
 }
 
 func NewLexer(input string) *Lexer {
@@ -73,7 +74,6 @@ func NewLexer(input string) *Lexer {
 func (l *Lexer) Lex() []Token {
 	expr := ""
 	var exprPos Position
-	tokens := make([]Token, 0)
 
 	for {
 		c, err := l.readNextRune()
@@ -81,10 +81,10 @@ func (l *Lexer) Lex() []Token {
 		if err != nil {
 			if err == io.EOF {
 				if expr != "" {
-					tokens = append(tokens, NewToken(exprPos, EXPRESSION, expr))
+					l.tokens = append(l.tokens, NewToken(exprPos, EXPRESSION, expr))
 				}
-				tokens = append(tokens, NewToken(l.pos, EOF, ""))
-				return tokens
+				l.tokens = append(l.tokens, NewToken(l.pos, EOF, ""))
+				return l.tokens
 			}
 
 			panic(err)
@@ -92,7 +92,7 @@ func (l *Lexer) Lex() []Token {
 
 		if slices.Contains(specialRunes, c) {
 			if expr != "" {
-				tokens = append(tokens, NewToken(exprPos, EXPRESSION, expr))
+				l.tokens = append(l.tokens, NewToken(exprPos, EXPRESSION, expr))
 			}
 			expr = ""
 
@@ -100,9 +100,9 @@ func (l *Lexer) Lex() []Token {
 				pos := l.pos
 				l.pos.Line += 1
 				l.pos.Column = 0
-				tokens = append(tokens, NewToken(pos, runeMap[c], string(c)))
+				l.tokens = append(l.tokens, NewToken(pos, runeMap[c], string(c)))
 			} else {
-				tokens = append(tokens, NewToken(l.pos, runeMap[c], string(c)))
+				l.tokens = append(l.tokens, NewToken(l.pos, runeMap[c], string(c)))
 			}
 		} else if unicode.IsSpace(c) && expr == "" {
 			continue
