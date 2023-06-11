@@ -27,6 +27,7 @@ const (
 	SEMI_COLON
 	HASH_SIGN
 	BACKSLASH
+	WHITESPACE
 )
 
 var runeMap = map[rune]TokenType{
@@ -90,7 +91,7 @@ func (l *Lexer) Lex() []Token {
 				l.tokens = append(l.tokens, NewToken(l.pos, runeMap[c], string(c)))
 			}
 		} else if unicode.IsSpace(c) {
-			continue
+			l.lexSpace()
 		} else {
 			l.lexExpression()
 		}
@@ -120,9 +121,25 @@ func (l *Lexer) lexExpression() {
 
 	for {
 		c := l.readNextRune()
-		if c == rune(0) || slices.Contains(specialRunes, c) {
+		if c == rune(0) || slices.Contains(specialRunes, c) || unicode.IsSpace(c) {
 			l.unreadRune()
 			l.tokens = append(l.tokens, NewToken(pos, EXPRESSION, expr))
+			return
+		}
+		expr += string(c)
+	}
+}
+
+func (l *Lexer) lexSpace() {
+	expr := ""
+	pos := l.pos
+	l.unreadRune()
+
+	for {
+		c := l.readNextRune()
+		if !unicode.IsSpace(c) || c == '\n' {
+			l.unreadRune()
+			l.tokens = append(l.tokens, NewToken(pos, WHITESPACE, expr))
 			return
 		}
 		expr += string(c)
