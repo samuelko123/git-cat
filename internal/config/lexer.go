@@ -72,26 +72,15 @@ func NewLexer(input string) *Lexer {
 }
 
 func (l *Lexer) Lex() []Token {
-	expr := ""
-	var exprPos Position
-
 	for {
 		c := l.readNextRune()
 
 		if c == rune(0) {
-			if expr != "" {
-				l.tokens = append(l.tokens, NewToken(exprPos, EXPRESSION, expr))
-			}
 			l.tokens = append(l.tokens, NewToken(l.pos, EOF, ""))
 			return l.tokens
 		}
 
 		if slices.Contains(specialRunes, c) {
-			if expr != "" {
-				l.tokens = append(l.tokens, NewToken(exprPos, EXPRESSION, expr))
-			}
-			expr = ""
-
 			if c == '\n' {
 				pos := l.pos
 				l.pos.Line += 1
@@ -100,13 +89,10 @@ func (l *Lexer) Lex() []Token {
 			} else {
 				l.tokens = append(l.tokens, NewToken(l.pos, runeMap[c], string(c)))
 			}
-		} else if unicode.IsSpace(c) && expr == "" {
+		} else if unicode.IsSpace(c) {
 			continue
 		} else {
-			if expr == "" {
-				exprPos = l.pos
-			}
-			expr += string(c)
+			l.lexExpression()
 		}
 	}
 }
@@ -125,4 +111,20 @@ func (l *Lexer) readNextRune() rune {
 func (l *Lexer) unreadRune() {
 	l.reader.UnreadRune()
 	l.pos.Column -= 1
+}
+
+func (l *Lexer) lexExpression() {
+	expr := ""
+	pos := l.pos
+	l.unreadRune()
+
+	for {
+		c := l.readNextRune()
+		if c == rune(0) || slices.Contains(specialRunes, c) {
+			l.unreadRune()
+			l.tokens = append(l.tokens, NewToken(pos, EXPRESSION, expr))
+			return
+		}
+		expr += string(c)
+	}
 }
