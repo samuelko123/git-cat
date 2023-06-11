@@ -44,7 +44,6 @@ func NewToken(pos Position, tType TokenType, tValue string) Token {
 type Lexer struct {
 	pos    Position
 	reader *bufio.Reader
-	tokens []Token
 }
 
 func NewLexer(input string) *Lexer {
@@ -55,13 +54,24 @@ func NewLexer(input string) *Lexer {
 }
 
 func (l *Lexer) Lex() []Token {
+	tokens := make([]Token, 0)
+
+	for {
+		t := l.getNextToken()
+		tokens = append(tokens, t)
+		if t.TType == EOF {
+			return tokens
+		}
+	}
+}
+
+func (l *Lexer) getNextToken() Token {
 	for {
 		c, err := l.readNextRune()
 
 		if err != nil {
 			if err == io.EOF {
-				l.pushToken(NewToken(l.pos, EOF, ""))
-				return l.tokens
+				return NewToken(l.pos, EOF, "")
 			}
 
 			panic(err)
@@ -69,31 +79,23 @@ func (l *Lexer) Lex() []Token {
 
 		switch c {
 		case '[':
-			l.pushToken(NewToken(l.pos, LEFT_SQUARE_BRACKET, "["))
-			continue
+			return NewToken(l.pos, LEFT_SQUARE_BRACKET, "[")
 		case ']':
-			l.pushToken(NewToken(l.pos, RIGHT_SQUARE_BRACKET, "]"))
-			continue
+			return NewToken(l.pos, RIGHT_SQUARE_BRACKET, "]")
 		case '"':
-			l.pushToken(NewToken(l.pos, DOUBLE_QUOTE, "\""))
-			continue
+			return NewToken(l.pos, DOUBLE_QUOTE, "\"")
 		case '\n':
 			l.pos.Line += 1
 			l.pos.Column = 0
-			l.pushToken(NewToken(l.pos, LINE_BREAK, "\n"))
-			continue
+			return NewToken(l.pos, LINE_BREAK, "\n")
 		case '=':
-			l.pushToken(NewToken(l.pos, EQUAL_SIGN, "="))
-			continue
+			return NewToken(l.pos, EQUAL_SIGN, "=")
 		case ';':
-			l.pushToken(NewToken(l.pos, SEMI_COLON, ";"))
-			continue
+			return NewToken(l.pos, SEMI_COLON, ";")
 		case '#':
-			l.pushToken(NewToken(l.pos, HASH_SIGN, "#"))
-			continue
+			return NewToken(l.pos, HASH_SIGN, "#")
 		case '\\':
-			l.pushToken(NewToken(l.pos, BACKSLASH, "\\"))
-			continue
+			return NewToken(l.pos, BACKSLASH, "\\")
 		default:
 			if unicode.IsSpace(c) {
 				continue
@@ -107,8 +109,4 @@ func (l *Lexer) readNextRune() (rune, error) {
 	l.pos.Column += 1
 
 	return c, err
-}
-
-func (l *Lexer) pushToken(t Token) {
-	l.tokens = append(l.tokens, t)
 }
