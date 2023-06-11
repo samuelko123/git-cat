@@ -27,6 +27,17 @@ const (
 	BACKSLASH
 )
 
+var runeMap = map[rune]TokenType{
+	'[':  LEFT_SQUARE_BRACKET,
+	']':  RIGHT_SQUARE_BRACKET,
+	'"':  DOUBLE_QUOTE,
+	'\n': LINE_BREAK,
+	'=':  EQUAL_SIGN,
+	';':  SEMI_COLON,
+	'#':  HASH_SIGN,
+	'\\': BACKSLASH,
+}
+
 type Token struct {
 	Pos    Position
 	TType  TokenType
@@ -70,32 +81,14 @@ func (l *Lexer) Lex() []Token {
 		}
 
 		switch c {
-		case '[':
-			t := NewToken(l.pos, LEFT_SQUARE_BRACKET, "[")
-			tokens = append(tokens, t)
-		case ']':
-			t := NewToken(l.pos, RIGHT_SQUARE_BRACKET, "]")
-			tokens = append(tokens, t)
-		case '"':
-			t := NewToken(l.pos, DOUBLE_QUOTE, "\"")
-			tokens = append(tokens, t)
 		case '\n':
 			pos := l.pos
 			l.pos.Line += 1
 			l.pos.Column = 0
-			t := NewToken(pos, LINE_BREAK, "\n")
+			t := NewToken(pos, runeMap[c], string(c))
 			tokens = append(tokens, t)
-		case '=':
-			t := NewToken(l.pos, EQUAL_SIGN, "=")
-			tokens = append(tokens, t)
-		case ';':
-			t := NewToken(l.pos, SEMI_COLON, ";")
-			tokens = append(tokens, t)
-		case '#':
-			t := NewToken(l.pos, HASH_SIGN, "#")
-			tokens = append(tokens, t)
-		case '\\':
-			t := NewToken(l.pos, BACKSLASH, "\\")
+		case '[', ']', '"', '=', ';', '#', '\\':
+			t := NewToken(l.pos, runeMap[c], string(c))
 			tokens = append(tokens, t)
 		default:
 			if unicode.IsSpace(c) {
