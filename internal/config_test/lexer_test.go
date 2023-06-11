@@ -12,8 +12,8 @@ func TestLex(t *testing.T) {
 		"":  {config.NewToken(config.Position{Line: 1, Column: 1}, config.EOF, "")},
 		"♥": {config.NewToken(config.Position{Line: 1, Column: 2}, config.EOF, "")},
 		"  \n \t \n  ": {
-			config.NewToken(config.Position{Line: 2, Column: 0}, config.LINE_BREAK, "\n"),
-			config.NewToken(config.Position{Line: 3, Column: 0}, config.LINE_BREAK, "\n"),
+			config.NewToken(config.Position{Line: 1, Column: 3}, config.LINE_BREAK, "\n"),
+			config.NewToken(config.Position{Line: 2, Column: 4}, config.LINE_BREAK, "\n"),
 			config.NewToken(config.Position{Line: 3, Column: 3}, config.EOF, ""),
 		},
 		"[": {
@@ -29,7 +29,7 @@ func TestLex(t *testing.T) {
 			config.NewToken(config.Position{Line: 1, Column: 2}, config.EOF, ""),
 		},
 		"\n": {
-			config.NewToken(config.Position{Line: 2, Column: 0}, config.LINE_BREAK, "\n"),
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.LINE_BREAK, "\n"),
 			config.NewToken(config.Position{Line: 2, Column: 1}, config.EOF, ""),
 		},
 		"=": {

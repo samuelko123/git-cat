@@ -85,9 +85,10 @@ func (l *Lexer) getNextToken() Token {
 		case '"':
 			return NewToken(l.pos, DOUBLE_QUOTE, "\"")
 		case '\n':
+			pos := l.pos
 			l.pos.Line += 1
 			l.pos.Column = 0
-			return NewToken(l.pos, LINE_BREAK, "\n")
+			return NewToken(pos, LINE_BREAK, "\n")
 		case '=':
 			return NewToken(l.pos, EQUAL_SIGN, "=")
 		case ';':
