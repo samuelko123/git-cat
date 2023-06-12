@@ -105,7 +105,7 @@ func (l *Lexer) lexSection() {
 
 		if r == '\n' {
 			panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
-		} else if unicode.IsDigit(r) || unicode.IsLetter(r) || r == '-' || r == '.' {
+		} else if unicode.IsDigit(r) || unicode.IsLetter(r) || r == '-' {
 			literal += string(r)
 		} else if unicode.IsSpace(r) {
 			l.tokens = append(l.tokens, NewToken(pos, SECTION, literal))

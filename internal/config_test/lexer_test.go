@@ -15,6 +15,10 @@ func TestLex(t *testing.T) {
 			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "core"),
 			config.NewToken(config.Position{Line: 1, Column: 7}, config.EOF, ""),
 		},
+		"[core-123]": {
+			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "core-123"),
+			config.NewToken(config.Position{Line: 1, Column: 11}, config.EOF, ""),
+		},
 		"[ core ]": {
 			config.NewToken(config.Position{Line: 1, Column: 3}, config.SECTION, "core"),
 			config.NewToken(config.Position{Line: 1, Column: 9}, config.EOF, ""),
