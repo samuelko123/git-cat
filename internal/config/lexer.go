@@ -119,15 +119,14 @@ func (l *Lexer) lexSection() {
 			r := l.readNextNonSpaceRune()
 			if r == ']' {
 				return
+			} else if r == '"' {
+				l.lexSubSection()
+				return
 			} else if isEndOfLine(r) {
 				panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
-			} else if r != '"' {
+			} else {
 				panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
 			}
-
-			l.lexSubSection()
-
-			return
 		} else {
 			panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
 		}
