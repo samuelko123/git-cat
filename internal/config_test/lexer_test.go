@@ -72,16 +72,16 @@ func TestLex_Panics(t *testing.T) {
 	testcases := map[string]string{
 		"[core":                 "missing ] character (1:6)",
 		"[core \t ":             "missing ] character (1:9)",
-		"[\ncore]":              "unexpected newline character (1:2)",
-		"[co\nre]":              "unexpected newline character (1:4)",
-		"[core\n]":              "unexpected newline character (1:6)",
+		"[\ncore]":              "missing ] character (1:2)",
+		"[co\nre]":              "missing ] character (1:4)",
+		"[core\n]":              "missing ] character (1:6)",
 		"[remote origin]":       "missing \" character (1:9)",
-		"[remote \"ori\ngin\"]": "unexpected newline character (1:13)",
-		"[remote \"ori":         "unexpected EOF character (1:13)",
+		"[remote \"ori\ngin\"]": "missing \" character (1:13)",
+		"[remote \"ori":         "missing \" character (1:13)",
 		"[remote \"origin\"":    "missing ] character (1:17)",
-		"[\nremote \"origin\"]": "unexpected newline character (1:2)",
-		"[remote\n\"origin\"]":  "unexpected newline character (1:8)",
-		"[remote \"origin\"\n]": "unexpected newline character (1:17)",
+		"[\nremote \"origin\"]": "missing ] character (1:2)",
+		"[remote\n\"origin\"]":  "missing ] character (1:8)",
+		"[remote \"origin\"\n]": "missing ] character (1:17)",
 	}
 
 	for input, expected := range testcases {
