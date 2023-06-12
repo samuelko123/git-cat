@@ -3,6 +3,7 @@ package config
 import (
 	"bufio"
 	"strings"
+	"unicode"
 )
 
 type Position struct {
@@ -50,6 +51,10 @@ func (l *Lexer) Lex() []Token {
 		if r == rune(0) {
 			l.tokens = append(l.tokens, NewToken(l.pos, EOF, ""))
 			return l.tokens
+		}
+
+		if unicode.IsSpace(r) {
+			continue
 		}
 	}
 }

@@ -9,7 +9,8 @@ import (
 
 func TestLex(t *testing.T) {
 	testcases := map[string][]config.Token{
-		"": {config.NewToken(config.Position{Line: 1, Column: 1}, config.EOF, "")},
+		"":     {config.NewToken(config.Position{Line: 1, Column: 1}, config.EOF, "")},
+		" \t ": {config.NewToken(config.Position{Line: 1, Column: 4}, config.EOF, "")},
 	}
 
 	for input, expected := range testcases {
