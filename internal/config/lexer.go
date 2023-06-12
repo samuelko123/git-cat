@@ -90,7 +90,7 @@ func (l *Lexer) Lex() []Token {
 
 		if r == '[' {
 			l.lexSection()
-		} else if r == ';' || r == '#' {
+		} else if isCommentChar(r) {
 			l.lexComment()
 		} else {
 			l.unreadRune()
@@ -226,18 +226,22 @@ func (l *Lexer) lexValue() {
 	pos := l.getNextPos()
 	for {
 		r := l.readNextRune()
-		switch r {
-		case '"':
-			l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
-			return
-		case ';', '#':
-			if quoted == true {
-				literal += string(r)
-			} else {
+
+		if isCommentChar(r) {
+			if quoted == false {
 				l.unreadRune()
 				l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
 				return
 			}
+
+			literal += string(r)
+			continue
+		}
+
+		switch r {
+		case '"':
+			l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
+			return
 		case '\\':
 			r = l.readNextRune()
 
@@ -321,4 +325,8 @@ func isLineBreak(r rune) bool {
 
 func isEndOfLine(r rune) bool {
 	return isEOF(r) || isLineBreak(r)
+}
+
+func isCommentChar(r rune) bool {
+	return r == ';' || r == '#'
 }
