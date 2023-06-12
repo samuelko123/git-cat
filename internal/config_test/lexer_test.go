@@ -5,6 +5,7 @@ import (
 
 	"github.com/samuelko123/git-cat/internal/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLex(t *testing.T) {
@@ -177,10 +178,14 @@ func TestLex(t *testing.T) {
 	}
 
 	for input, expected := range testcases {
+		fn := func() {
+			lexer := config.NewLexer(input)
+			lexer.Lex()
+		}
+		require.NotPanics(t, fn, "Input failed:\n"+input)
+
 		lexer := config.NewLexer(input)
-
 		token := lexer.Lex()
-
 		assert.Equal(t, expected, token, "Input:\n"+input)
 	}
 }
