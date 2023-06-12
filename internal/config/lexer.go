@@ -157,9 +157,7 @@ func (l *Lexer) lexSubSection() {
 			l.tokens = append(l.tokens, NewToken(pos, SUBSECTION, literal))
 
 			r = l.readNextNonSpaceRune()
-			if isLineBreak(r) {
-				panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
-			} else if r != ']' {
+			if r != ']' {
 				panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
 			}
 
