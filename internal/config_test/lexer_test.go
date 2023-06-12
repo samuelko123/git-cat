@@ -19,6 +19,14 @@ func TestLex(t *testing.T) {
 			config.NewToken(config.Position{Line: 1, Column: 3}, config.SECTION, "core"),
 			config.NewToken(config.Position{Line: 1, Column: 9}, config.EOF, ""),
 		},
+		"\n[core]\n": {
+			config.NewToken(config.Position{Line: 2, Column: 2}, config.SECTION, "core"),
+			config.NewToken(config.Position{Line: 3, Column: 1}, config.EOF, ""),
+		},
+		" \t [core] \t ": {
+			config.NewToken(config.Position{Line: 1, Column: 5}, config.SECTION, "core"),
+			config.NewToken(config.Position{Line: 1, Column: 13}, config.EOF, ""),
+		},
 		"[remote \"origin\"]": {
 			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "remote"),
 			config.NewToken(config.Position{Line: 1, Column: 10}, config.SUBSECTION, "origin"),

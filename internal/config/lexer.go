@@ -36,15 +36,18 @@ func NewToken(pos Position, tType TokenType, tValue string) Token {
 }
 
 type Lexer struct {
-	pos    Position
-	reader *bufio.Reader
-	tokens []Token
+	currPos  Position
+	prevPos  Position
+	reader   *bufio.Reader
+	tokens   []Token
+	currRune rune
+	prevRune rune
 }
 
 func NewLexer(input string) *Lexer {
 	return &Lexer{
-		pos:    Position{Line: 1, Column: 0},
-		reader: bufio.NewReader(strings.NewReader(input)),
+		currPos: Position{Line: 1, Column: 0},
+		reader:  bufio.NewReader(strings.NewReader(input)),
 	}
 }
 
@@ -53,7 +56,7 @@ func (l *Lexer) Lex() []Token {
 		r := l.readNextRune()
 
 		if r == rune(0) {
-			l.tokens = append(l.tokens, NewToken(l.pos, EOF, ""))
+			l.tokens = append(l.tokens, NewToken(l.currPos, EOF, ""))
 			return l.tokens
 		}
 
@@ -70,14 +73,14 @@ func (l *Lexer) Lex() []Token {
 func (l *Lexer) lexSection() {
 	literal := ""
 	l.readNextNonSpaceRune()
-	pos := l.pos
+	pos := l.currPos
 	l.unreadRune()
 
 	for {
 		r := l.readNextRune()
 
 		if r == '\n' {
-			panic(errors.New(fmt.Sprintf("unexpected newline character (%d:%d)", l.pos.Line, l.pos.Column)))
+			panic(errors.New(fmt.Sprintf("unexpected newline character (%d:%d)", l.currPos.Line, l.currPos.Column)))
 		} else if unicode.IsDigit(r) || unicode.IsLetter(r) || r == '-' || r == '.' {
 			literal += string(r)
 		} else if unicode.IsSpace(r) {
@@ -87,9 +90,9 @@ func (l *Lexer) lexSection() {
 			if r == ']' {
 				return
 			} else if r == '\n' || r == rune(0) {
-				panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.pos.Line, l.pos.Column)))
+				panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.currPos.Line, l.currPos.Column)))
 			} else if r != '"' {
-				panic(errors.New(fmt.Sprintf("missing \" character (%d:%d)", l.pos.Line, l.pos.Column)))
+				panic(errors.New(fmt.Sprintf("missing \" character (%d:%d)", l.currPos.Line, l.currPos.Column)))
 			}
 
 			l.lexSubSection()
@@ -99,7 +102,7 @@ func (l *Lexer) lexSection() {
 			l.tokens = append(l.tokens, NewToken(pos, SECTION, literal))
 			return
 		} else {
-			panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.pos.Line, l.pos.Column)))
+			panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.currPos.Line, l.currPos.Column)))
 		}
 	}
 }
@@ -112,9 +115,9 @@ func (l *Lexer) lexSubSection() {
 		r := l.readNextRune()
 		switch r {
 		case '\n':
-			panic(errors.New(fmt.Sprintf("unexpected newline character (%d:%d)", l.pos.Line, l.pos.Column)))
+			panic(errors.New(fmt.Sprintf("unexpected newline character (%d:%d)", l.currPos.Line, l.currPos.Column)))
 		case rune(0):
-			panic(errors.New(fmt.Sprintf("unexpected EOF character (%d:%d)", l.pos.Line, l.pos.Column)))
+			panic(errors.New(fmt.Sprintf("unexpected EOF character (%d:%d)", l.currPos.Line, l.currPos.Column)))
 		case '\\':
 			r = l.readNextRune()
 			if r == '"' {
@@ -129,9 +132,9 @@ func (l *Lexer) lexSubSection() {
 
 			r = l.readNextNonSpaceRune()
 			if r == '\n' {
-				panic(errors.New(fmt.Sprintf("unexpected newline character (%d:%d)", l.pos.Line, l.pos.Column)))
+				panic(errors.New(fmt.Sprintf("unexpected newline character (%d:%d)", l.currPos.Line, l.currPos.Column)))
 			} else if r != ']' {
-				panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.pos.Line, l.pos.Column)))
+				panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.currPos.Line, l.currPos.Column)))
 			}
 
 			return
@@ -156,18 +159,27 @@ func (l *Lexer) readNextNonSpaceRune() rune {
 
 func (l *Lexer) readNextRune() rune {
 	r, _, _ := l.reader.ReadRune()
-	l.pos.Column += 1
+	l.prevPos = l.currPos
+	l.prevRune = l.currRune
+	l.currRune = r
+	if l.prevRune == '\n' {
+		l.currPos.Line += 1
+		l.currPos.Column = 1
+	} else {
+		l.currPos.Column += 1
+	}
 
 	return r
 }
 
 func (l *Lexer) unreadRune() {
 	l.reader.UnreadRune()
-	l.pos.Column -= 1
+	l.currPos = l.prevPos
+	l.currRune = l.prevRune
 }
 
 func (l *Lexer) getNextPos() Position {
-	pos := l.pos
+	pos := l.currPos
 	pos.Column++
 	return pos
 }
