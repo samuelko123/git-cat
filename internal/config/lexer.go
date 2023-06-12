@@ -108,11 +108,12 @@ func (l *Lexer) lexSection() {
 	for {
 		r := l.readNextRune()
 
-		if isLineBreak(r) {
-			panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
+		if r == ']' {
+			l.tokens = append(l.tokens, NewToken(pos, SECTION, literal))
+			return
 		} else if isValidKeyChar(r) {
 			literal += string(r)
-		} else if unicode.IsSpace(r) {
+		} else if unicode.IsSpace(r) && !isLineBreak(r) {
 			l.tokens = append(l.tokens, NewToken(pos, SECTION, literal))
 
 			r := l.readNextNonSpaceRune()
@@ -126,9 +127,6 @@ func (l *Lexer) lexSection() {
 
 			l.lexSubSection()
 
-			return
-		} else if r == ']' {
-			l.tokens = append(l.tokens, NewToken(pos, SECTION, literal))
 			return
 		} else {
 			panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
