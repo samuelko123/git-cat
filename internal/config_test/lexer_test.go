@@ -15,10 +15,19 @@ func TestLex(t *testing.T) {
 			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "core"),
 			config.NewToken(config.Position{Line: 1, Column: 7}, config.EOF, ""),
 		},
+		"[ core ]": {
+			config.NewToken(config.Position{Line: 1, Column: 3}, config.SECTION, "core"),
+			config.NewToken(config.Position{Line: 1, Column: 9}, config.EOF, ""),
+		},
 		"[remote \"origin\"]": {
 			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "remote"),
 			config.NewToken(config.Position{Line: 1, Column: 10}, config.SUBSECTION, "origin"),
 			config.NewToken(config.Position{Line: 1, Column: 18}, config.EOF, ""),
+		},
+		"[ \t remote \"origin\" \t ]": {
+			config.NewToken(config.Position{Line: 1, Column: 5}, config.SECTION, "remote"),
+			config.NewToken(config.Position{Line: 1, Column: 13}, config.SUBSECTION, "origin"),
+			config.NewToken(config.Position{Line: 1, Column: 24}, config.EOF, ""),
 		},
 		"[remote \"ori\\gin\"]": {
 			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "remote"),
@@ -54,13 +63,17 @@ func TestLex(t *testing.T) {
 func TestLex_Panics(t *testing.T) {
 	testcases := map[string]string{
 		"[core":                 "missing ] character (1:6)",
-		"[core\n]":              "missing ] character (1:6)",
-		"[remote \t ":           "missing \" character (1:11)",
+		"[core \t ":             "missing ] character (1:9)",
+		"[\ncore]":              "unexpected newline character (1:2)",
+		"[co\nre]":              "unexpected newline character (1:4)",
+		"[core\n]":              "unexpected newline character (1:6)",
 		"[remote origin]":       "missing \" character (1:9)",
 		"[remote \"ori\ngin\"]": "unexpected newline character (1:13)",
 		"[remote \"ori":         "unexpected EOF character (1:13)",
 		"[remote \"origin\"":    "missing ] character (1:17)",
-		"[remote \"origin\" ]":  "missing ] character (1:17)",
+		"[\nremote \"origin\"]": "unexpected newline character (1:2)",
+		"[remote\n\"origin\"]":  "unexpected newline character (1:8)",
+		"[remote \"origin\"\n]": "unexpected newline character (1:17)",
 	}
 
 	for input, expected := range testcases {

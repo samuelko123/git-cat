@@ -69,19 +69,31 @@ func (l *Lexer) Lex() []Token {
 
 func (l *Lexer) lexSection() {
 	literal := ""
-	l.readNextRune()
+	l.readNextNonSpaceRune()
 	pos := l.pos
 	l.unreadRune()
 
 	for {
 		r := l.readNextRune()
 
-		if unicode.IsDigit(r) || unicode.IsLetter(r) || r == '-' || r == '.' {
+		if r == '\n' {
+			panic(errors.New(fmt.Sprintf("unexpected newline character (%d:%d)", l.pos.Line, l.pos.Column)))
+		} else if unicode.IsDigit(r) || unicode.IsLetter(r) || r == '-' || r == '.' {
 			literal += string(r)
-		} else if r == ' ' {
+		} else if unicode.IsSpace(r) {
 			l.tokens = append(l.tokens, NewToken(pos, SECTION, literal))
-			l.unreadRune()
+
+			r := l.readNextNonSpaceRune()
+			if r == ']' {
+				return
+			} else if r == '\n' || r == rune(0) {
+				panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.pos.Line, l.pos.Column)))
+			} else if r != '"' {
+				panic(errors.New(fmt.Sprintf("missing \" character (%d:%d)", l.pos.Line, l.pos.Column)))
+			}
+
 			l.lexSubSection()
+
 			return
 		} else if r == ']' {
 			l.tokens = append(l.tokens, NewToken(pos, SECTION, literal))
@@ -93,18 +105,13 @@ func (l *Lexer) lexSection() {
 }
 
 func (l *Lexer) lexSubSection() {
-	r := l.readNextNonSpaceRune()
-	if r != '"' {
-		panic(errors.New(fmt.Sprintf("missing \" character (%d:%d)", l.pos.Line, l.pos.Column)))
-	}
-
 	literal := ""
 	l.readNextRune()
 	pos := l.pos
 	l.unreadRune()
 
 	for {
-		r = l.readNextRune()
+		r := l.readNextRune()
 		switch r {
 		case '\n':
 			panic(errors.New(fmt.Sprintf("unexpected newline character (%d:%d)", l.pos.Line, l.pos.Column)))
@@ -122,8 +129,10 @@ func (l *Lexer) lexSubSection() {
 		case '"':
 			l.tokens = append(l.tokens, NewToken(pos, SUBSECTION, literal))
 
-			r = l.readNextRune()
-			if r != ']' {
+			r = l.readNextNonSpaceRune()
+			if r == '\n' {
+				panic(errors.New(fmt.Sprintf("unexpected newline character (%d:%d)", l.pos.Line, l.pos.Column)))
+			} else if r != ']' {
 				panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.pos.Line, l.pos.Column)))
 			}
 
@@ -139,7 +148,7 @@ func (l *Lexer) readNextNonSpaceRune() rune {
 
 	for {
 		r = l.readNextRune()
-		if !unicode.IsSpace(r) {
+		if !unicode.IsSpace(r) || r == '\n' {
 			break
 		}
 	}
