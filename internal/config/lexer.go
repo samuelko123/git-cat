@@ -105,7 +105,7 @@ func (l *Lexer) lexSection() {
 
 		if r == '\n' {
 			panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
-		} else if unicode.IsDigit(r) || unicode.IsLetter(r) || r == '-' {
+		} else if isValidKeyChar(r) {
 			literal += string(r)
 		} else if unicode.IsSpace(r) {
 			l.tokens = append(l.tokens, NewToken(pos, SECTION, literal))
@@ -200,7 +200,7 @@ func (l *Lexer) lexKey() {
 			l.unreadRune()
 			l.lexValue()
 			return
-		} else if unicode.IsDigit(r) || unicode.IsLetter(r) || r == '-' {
+		} else if isValidKeyChar(r) {
 			literal += string(r)
 		} else {
 			panic(errors.New(fmt.Sprintf(ERR_INVALID_CHARACTER, string(r), l.currPos.Line, l.currPos.Column)))
@@ -294,4 +294,12 @@ func (l *Lexer) getNextPos() Position {
 	pos := l.currPos
 	l.unreadRune()
 	return pos
+}
+
+func isAlphanumeric(r rune) bool {
+	return unicode.IsDigit(r) || unicode.IsLetter(r)
+}
+
+func isValidKeyChar(r rune) bool {
+	return isAlphanumeric(r) || r == '-'
 }
