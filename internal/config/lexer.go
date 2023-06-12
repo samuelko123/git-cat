@@ -19,6 +19,7 @@ const (
 	EOF TokenType = iota
 	SECTION
 	SUBSECTION
+	COMMENT
 )
 
 const (
@@ -71,6 +72,8 @@ func (l *Lexer) Lex() []Token {
 
 		if r == '[' {
 			l.lexSection()
+		} else if r == ';' || r == '#' {
+			l.lexComment()
 		}
 	}
 }
@@ -140,6 +143,23 @@ func (l *Lexer) lexSubSection() {
 				panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
 			}
 
+			return
+		default:
+			literal += string(r)
+		}
+	}
+}
+
+func (l *Lexer) lexComment() {
+	literal := ""
+	pos := l.getNextPos()
+
+	for {
+		r := l.readNextRune()
+		switch r {
+		case '\n', rune(0):
+			l.unreadRune()
+			l.tokens = append(l.tokens, NewToken(pos, COMMENT, literal))
 			return
 		default:
 			literal += string(r)

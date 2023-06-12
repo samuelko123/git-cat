@@ -57,6 +57,22 @@ func TestLex(t *testing.T) {
 			config.NewToken(config.Position{Line: 1, Column: 10}, config.SUBSECTION, "ori]gin"),
 			config.NewToken(config.Position{Line: 1, Column: 19}, config.EOF, ""),
 		},
+		"[core] ; comment": {
+			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "core"),
+			config.NewToken(config.Position{Line: 1, Column: 9}, config.COMMENT, " comment"),
+			config.NewToken(config.Position{Line: 1, Column: 17}, config.EOF, ""),
+		},
+		" # comment \n [core] ": {
+			config.NewToken(config.Position{Line: 1, Column: 3}, config.COMMENT, " comment "),
+			config.NewToken(config.Position{Line: 2, Column: 3}, config.SECTION, "core"),
+			config.NewToken(config.Position{Line: 2, Column: 9}, config.EOF, ""),
+		},
+		"[remote \"origin\"] \n \t ### comment ": {
+			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "remote"),
+			config.NewToken(config.Position{Line: 1, Column: 10}, config.SUBSECTION, "origin"),
+			config.NewToken(config.Position{Line: 2, Column: 5}, config.COMMENT, "## comment "),
+			config.NewToken(config.Position{Line: 2, Column: 16}, config.EOF, ""),
+		},
 	}
 
 	for input, expected := range testcases {
