@@ -113,7 +113,7 @@ func (l *Lexer) lexSection() {
 			r := l.readNextNonSpaceRune()
 			if r == ']' {
 				return
-			} else if isLineBreak(r) || isEOF(r) {
+			} else if isEndOfLine(r) {
 				panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
 			} else if r != '"' {
 				panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
@@ -138,8 +138,6 @@ func (l *Lexer) lexSubSection() {
 	for {
 		r := l.readNextRune()
 		switch r {
-		case '\n', rune(0):
-			panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
 		case '\\':
 			r = l.readNextRune()
 			if r == '"' {
@@ -161,6 +159,9 @@ func (l *Lexer) lexSubSection() {
 
 			return
 		default:
+			if isEndOfLine(r) {
+				panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
+			}
 			literal += string(r)
 		}
 	}
@@ -172,14 +173,13 @@ func (l *Lexer) lexComment() {
 
 	for {
 		r := l.readNextRune()
-		switch r {
-		case '\n', rune(0):
+		if isEndOfLine(r) {
 			l.unreadRune()
 			l.tokens = append(l.tokens, NewToken(pos, COMMENT, literal))
 			return
-		default:
-			literal += string(r)
 		}
+
+		literal += string(r)
 	}
 }
 
@@ -190,7 +190,7 @@ func (l *Lexer) lexKey() {
 	for {
 		r := l.readNextRune()
 
-		if isLineBreak(r) || isEOF(r) || unicode.IsSpace(r) {
+		if isEndOfLine(r) || unicode.IsSpace(r) {
 			l.unreadRune()
 			l.tokens = append(l.tokens, NewToken(pos, KEY, literal))
 			return
@@ -233,13 +233,6 @@ func (l *Lexer) lexValue() {
 				l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
 				return
 			}
-		case '\n', rune(0):
-			if quoted == true {
-				panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
-			}
-			l.unreadRune()
-			l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
-			return
 		case '\\':
 			r = l.readNextRune()
 
@@ -250,6 +243,15 @@ func (l *Lexer) lexValue() {
 
 			literal += escaped
 		default:
+			if isEndOfLine(r) {
+				if quoted == true {
+					panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
+				}
+				l.unreadRune()
+				l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
+				return
+			}
+
 			literal += string(r)
 		}
 	}
@@ -273,7 +275,7 @@ func (l *Lexer) readNextRune() rune {
 	l.prevPos = l.currPos
 	l.prevRune = l.currRune
 	l.currRune = r
-	if l.prevRune == '\n' {
+	if isLineBreak(l.prevRune) {
 		l.currPos.Line += 1
 		l.currPos.Column = 1
 	} else {
@@ -310,4 +312,8 @@ func isEOF(r rune) bool {
 
 func isLineBreak(r rune) bool {
 	return r == '\n'
+}
+
+func isEndOfLine(r rune) bool {
+	return isEOF(r) || isLineBreak(r)
 }
