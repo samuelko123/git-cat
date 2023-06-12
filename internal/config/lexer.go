@@ -238,11 +238,12 @@ func (l *Lexer) lexValue() {
 			continue
 		}
 
-		switch r {
-		case '"':
+		if r == '"' {
 			l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
 			return
-		case '\\':
+		}
+
+		if r == '\\' {
 			r = l.readNextRune()
 
 			escaped, ok := VALUE_ESCAPE_MAP[r]
@@ -251,18 +252,19 @@ func (l *Lexer) lexValue() {
 			}
 
 			literal += escaped
-		default:
-			if isEndOfLine(r) {
-				if quoted == true {
-					panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
-				}
-				l.unreadRune()
-				l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
-				return
-			}
-
-			literal += string(r)
+			continue
 		}
+
+		if isEndOfLine(r) {
+			if quoted == true {
+				panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
+			}
+			l.unreadRune()
+			l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
+			return
+		}
+
+		literal += string(r)
 	}
 }
 
