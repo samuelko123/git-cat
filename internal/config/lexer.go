@@ -21,6 +21,13 @@ const (
 	SUBSECTION
 )
 
+const (
+	ERR_UNEXPECTED_NEWLINE         string = "unexpected newline character (%d:%d)"
+	ERR_UNEXPECTED_CLOSING_BRACKET string = "missing ] character (%d:%d)"
+	ERR_MISSING_QUOTE              string = "missing \" character (%d:%d)"
+	ERR_UNEXPECTED_EOF             string = "unexpected EOF character (%d:%d)"
+)
+
 type Token struct {
 	Pos    Position
 	TType  TokenType
@@ -80,7 +87,7 @@ func (l *Lexer) lexSection() {
 		r := l.readNextRune()
 
 		if r == '\n' {
-			panic(errors.New(fmt.Sprintf("unexpected newline character (%d:%d)", l.currPos.Line, l.currPos.Column)))
+			panic(errors.New(fmt.Sprintf(ERR_UNEXPECTED_NEWLINE, l.currPos.Line, l.currPos.Column)))
 		} else if unicode.IsDigit(r) || unicode.IsLetter(r) || r == '-' || r == '.' {
 			literal += string(r)
 		} else if unicode.IsSpace(r) {
@@ -90,9 +97,9 @@ func (l *Lexer) lexSection() {
 			if r == ']' {
 				return
 			} else if r == '\n' || r == rune(0) {
-				panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.currPos.Line, l.currPos.Column)))
+				panic(errors.New(fmt.Sprintf(ERR_UNEXPECTED_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
 			} else if r != '"' {
-				panic(errors.New(fmt.Sprintf("missing \" character (%d:%d)", l.currPos.Line, l.currPos.Column)))
+				panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
 			}
 
 			l.lexSubSection()
@@ -102,7 +109,7 @@ func (l *Lexer) lexSection() {
 			l.tokens = append(l.tokens, NewToken(pos, SECTION, literal))
 			return
 		} else {
-			panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.currPos.Line, l.currPos.Column)))
+			panic(errors.New(fmt.Sprintf(ERR_UNEXPECTED_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
 		}
 	}
 }
@@ -115,9 +122,9 @@ func (l *Lexer) lexSubSection() {
 		r := l.readNextRune()
 		switch r {
 		case '\n':
-			panic(errors.New(fmt.Sprintf("unexpected newline character (%d:%d)", l.currPos.Line, l.currPos.Column)))
+			panic(errors.New(fmt.Sprintf(ERR_UNEXPECTED_NEWLINE, l.currPos.Line, l.currPos.Column)))
 		case rune(0):
-			panic(errors.New(fmt.Sprintf("unexpected EOF character (%d:%d)", l.currPos.Line, l.currPos.Column)))
+			panic(errors.New(fmt.Sprintf(ERR_UNEXPECTED_EOF, l.currPos.Line, l.currPos.Column)))
 		case '\\':
 			r = l.readNextRune()
 			if r == '"' {
@@ -132,9 +139,9 @@ func (l *Lexer) lexSubSection() {
 
 			r = l.readNextNonSpaceRune()
 			if r == '\n' {
-				panic(errors.New(fmt.Sprintf("unexpected newline character (%d:%d)", l.currPos.Line, l.currPos.Column)))
+				panic(errors.New(fmt.Sprintf(ERR_UNEXPECTED_NEWLINE, l.currPos.Line, l.currPos.Column)))
 			} else if r != ']' {
-				panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.currPos.Line, l.currPos.Column)))
+				panic(errors.New(fmt.Sprintf(ERR_UNEXPECTED_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
 			}
 
 			return
