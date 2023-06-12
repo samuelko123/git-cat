@@ -73,6 +73,35 @@ func TestLex(t *testing.T) {
 			config.NewToken(config.Position{Line: 2, Column: 5}, config.COMMENT, "## comment "),
 			config.NewToken(config.Position{Line: 2, Column: 16}, config.EOF, ""),
 		},
+		"user": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 5}, config.EOF, ""),
+		},
+		"user-123": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user-123"),
+			config.NewToken(config.Position{Line: 1, Column: 9}, config.EOF, ""),
+		},
+		" user ": {
+			config.NewToken(config.Position{Line: 1, Column: 2}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 7}, config.EOF, ""),
+		},
+		"\nuser\n": {
+			config.NewToken(config.Position{Line: 2, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 3, Column: 1}, config.EOF, ""),
+		},
+		" \t user \t ": {
+			config.NewToken(config.Position{Line: 1, Column: 4}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 11}, config.EOF, ""),
+		},
+		"user=\n": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 2, Column: 1}, config.EOF, ""),
+		},
+		"user # comment": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 7}, config.COMMENT, " comment"),
+			config.NewToken(config.Position{Line: 1, Column: 15}, config.EOF, ""),
+		},
 	}
 
 	for input, expected := range testcases {
@@ -98,6 +127,7 @@ func TestLex_Panics(t *testing.T) {
 		"[\nremote \"origin\"]": "missing ] character (1:2)",
 		"[remote\n\"origin\"]":  "missing ] character (1:8)",
 		"[remote \"origin\"\n]": "missing ] character (1:17)",
+		"user]123":              "invalid character ] (1:5)",
 	}
 
 	for input, expected := range testcases {

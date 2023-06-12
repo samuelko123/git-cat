@@ -20,11 +20,13 @@ const (
 	SECTION
 	SUBSECTION
 	COMMENT
+	KEY
 )
 
 const (
 	ERR_MISSING_CLOSING_BRACKET string = "missing ] character (%d:%d)"
 	ERR_MISSING_QUOTE           string = "missing \" character (%d:%d)"
+	ERR_INVALID_CHARACTER       string = "invalid character %s (%d:%d)"
 )
 
 type Token struct {
@@ -74,6 +76,11 @@ func (l *Lexer) Lex() []Token {
 			l.lexSection()
 		} else if r == ';' || r == '#' {
 			l.lexComment()
+		} else if r == '=' {
+			l.lexValue()
+		} else {
+			l.unreadRune()
+			l.lexKey()
 		}
 	}
 }
@@ -167,6 +174,29 @@ func (l *Lexer) lexComment() {
 	}
 }
 
+func (l *Lexer) lexKey() {
+	literal := ""
+	pos := l.getNextPos()
+
+	for {
+		r := l.readNextRune()
+
+		if r == '\n' || r == rune(0) || r == '=' || unicode.IsSpace(r) {
+			l.unreadRune()
+			l.tokens = append(l.tokens, NewToken(pos, KEY, literal))
+			return
+		} else if unicode.IsDigit(r) || unicode.IsLetter(r) || r == '-' {
+			literal += string(r)
+		} else {
+			panic(errors.New(fmt.Sprintf(ERR_INVALID_CHARACTER, string(r), l.currPos.Line, l.currPos.Column)))
+		}
+	}
+}
+
+func (l *Lexer) lexValue() {
+	// TODO
+}
+
 func (l *Lexer) readNextNonSpaceRune() rune {
 	var r rune
 
@@ -202,7 +232,8 @@ func (l *Lexer) unreadRune() {
 }
 
 func (l *Lexer) getNextPos() Position {
+	l.readNextRune()
 	pos := l.currPos
-	pos.Column++
+	l.unreadRune()
 	return pos
 }
