@@ -15,6 +15,31 @@ func TestLex(t *testing.T) {
 			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "core"),
 			config.NewToken(config.Position{Line: 1, Column: 7}, config.EOF, ""),
 		},
+		"[remote \"origin\"]": {
+			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "remote"),
+			config.NewToken(config.Position{Line: 1, Column: 10}, config.SUBSECTION, "origin"),
+			config.NewToken(config.Position{Line: 1, Column: 18}, config.EOF, ""),
+		},
+		"[remote \"ori\\gin\"]": {
+			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "remote"),
+			config.NewToken(config.Position{Line: 1, Column: 10}, config.SUBSECTION, "origin"),
+			config.NewToken(config.Position{Line: 1, Column: 19}, config.EOF, ""),
+		},
+		"[remote \"ori\\\"gin\"]": {
+			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "remote"),
+			config.NewToken(config.Position{Line: 1, Column: 10}, config.SUBSECTION, "ori\"gin"),
+			config.NewToken(config.Position{Line: 1, Column: 20}, config.EOF, ""),
+		},
+		"[remote \"ori\\\\gin\"]": {
+			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "remote"),
+			config.NewToken(config.Position{Line: 1, Column: 10}, config.SUBSECTION, "ori\\gin"),
+			config.NewToken(config.Position{Line: 1, Column: 20}, config.EOF, ""),
+		},
+		"[remote \"ori]gin\"]": {
+			config.NewToken(config.Position{Line: 1, Column: 2}, config.SECTION, "remote"),
+			config.NewToken(config.Position{Line: 1, Column: 10}, config.SUBSECTION, "ori]gin"),
+			config.NewToken(config.Position{Line: 1, Column: 19}, config.EOF, ""),
+		},
 	}
 
 	for input, expected := range testcases {
@@ -22,13 +47,20 @@ func TestLex(t *testing.T) {
 
 		token := lexer.Lex()
 
-		assert.Equal(t, expected, token, "Failed input:\n"+input)
+		assert.Equal(t, expected, token, "Input:\n"+input)
 	}
 }
 
 func TestLex_Panics(t *testing.T) {
 	testcases := map[string]string{
-		"[core": "missing ] character (1:6)",
+		"[core":                 "missing ] character (1:6)",
+		"[core\n]":              "missing ] character (1:6)",
+		"[remote \t ":           "missing \" character (1:11)",
+		"[remote origin]":       "missing \" character (1:9)",
+		"[remote \"ori\ngin\"]": "unexpected newline character (1:13)",
+		"[remote \"ori":         "unexpected EOF character (1:13)",
+		"[remote \"origin\"":    "missing ] character (1:17)",
+		"[remote \"origin\" ]":  "missing ] character (1:17)",
 	}
 
 	for input, expected := range testcases {
@@ -37,6 +69,6 @@ func TestLex_Panics(t *testing.T) {
 			lexer.Lex()
 		}
 
-		assert.PanicsWithError(t, expected, fn, "Input does not panic:\n"+input)
+		assert.PanicsWithError(t, expected, fn, "Input:\n"+input)
 	}
 }

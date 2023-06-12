@@ -18,6 +18,7 @@ type TokenType int
 const (
 	EOF TokenType = iota
 	SECTION
+	SUBSECTION
 )
 
 type Token struct {
@@ -77,6 +78,11 @@ func (l *Lexer) lexSection() {
 
 		if unicode.IsDigit(r) || unicode.IsLetter(r) || r == '-' || r == '.' {
 			literal += string(r)
+		} else if r == ' ' {
+			l.tokens = append(l.tokens, NewToken(pos, SECTION, literal))
+			l.unreadRune()
+			l.lexSubSection()
+			return
 		} else if r == ']' {
 			l.tokens = append(l.tokens, NewToken(pos, SECTION, literal))
 			return
@@ -84,6 +90,61 @@ func (l *Lexer) lexSection() {
 			panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.pos.Line, l.pos.Column)))
 		}
 	}
+}
+
+func (l *Lexer) lexSubSection() {
+	r := l.readNextNonSpaceRune()
+	if r != '"' {
+		panic(errors.New(fmt.Sprintf("missing \" character (%d:%d)", l.pos.Line, l.pos.Column)))
+	}
+
+	literal := ""
+	l.readNextRune()
+	pos := l.pos
+	l.unreadRune()
+
+	for {
+		r = l.readNextRune()
+		switch r {
+		case '\n':
+			panic(errors.New(fmt.Sprintf("unexpected newline character (%d:%d)", l.pos.Line, l.pos.Column)))
+		case rune(0):
+			panic(errors.New(fmt.Sprintf("unexpected EOF character (%d:%d)", l.pos.Line, l.pos.Column)))
+		case '\\':
+			r = l.readNextRune()
+			if r == '"' {
+				literal += "\""
+			} else if r == '\\' {
+				literal += "\\"
+			} else {
+				literal += string(r)
+			}
+		case '"':
+			l.tokens = append(l.tokens, NewToken(pos, SUBSECTION, literal))
+
+			r = l.readNextRune()
+			if r != ']' {
+				panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.pos.Line, l.pos.Column)))
+			}
+
+			return
+		default:
+			literal += string(r)
+		}
+	}
+}
+
+func (l *Lexer) readNextNonSpaceRune() rune {
+	var r rune
+
+	for {
+		r = l.readNextRune()
+		if !unicode.IsSpace(r) {
+			break
+		}
+	}
+
+	return r
 }
 
 func (l *Lexer) readNextRune() rune {
