@@ -227,45 +227,50 @@ func (l *Lexer) lexValue() {
 	for {
 		r := l.readNextRune()
 
-		if isCommentChar(r) {
-			if quoted == false {
-				l.unreadRune()
-				l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
-				return
-			}
-
-			literal += string(r)
-			continue
-		}
-
-		if r == '"' {
+		done, str := l.handleCharForValue(r, quoted)
+		if done {
 			l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
 			return
 		}
 
-		if r == '\\' {
-			r = l.readNextRune()
-
-			escaped, ok := VALUE_ESCAPE_MAP[r]
-			if !ok {
-				panic(errors.New(fmt.Sprintf(ERR_INVALID_ESCAPE, "\\"+string(r), l.prevPos.Line, l.prevPos.Column)))
-			}
-
-			literal += escaped
-			continue
-		}
-
-		if isEndOfLine(r) {
-			if quoted == true {
-				panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
-			}
-			l.unreadRune()
-			l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
-			return
-		}
-
-		literal += string(r)
+		literal += str
 	}
+}
+
+func (l *Lexer) handleCharForValue(r rune, quoted bool) (done bool, str string) {
+	if isCommentChar(r) {
+		if quoted == false {
+			l.unreadRune()
+			return true, ""
+		}
+
+		return false, string(r)
+	}
+
+	if r == '"' {
+		return true, ""
+	}
+
+	if r == '\\' {
+		r = l.readNextRune()
+
+		escaped, ok := VALUE_ESCAPE_MAP[r]
+		if !ok {
+			panic(errors.New(fmt.Sprintf(ERR_INVALID_ESCAPE, "\\"+string(r), l.prevPos.Line, l.prevPos.Column)))
+		}
+
+		return false, escaped
+	}
+
+	if isEndOfLine(r) {
+		if quoted == true {
+			panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
+		}
+		l.unreadRune()
+		return true, ""
+	}
+
+	return false, string(r)
 }
 
 func (l *Lexer) readNextNonSpaceRune() rune {
