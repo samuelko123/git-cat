@@ -93,14 +93,82 @@ func TestLex(t *testing.T) {
 			config.NewToken(config.Position{Line: 1, Column: 4}, config.KEY, "user"),
 			config.NewToken(config.Position{Line: 1, Column: 11}, config.EOF, ""),
 		},
-		"user=\n": {
-			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
-			config.NewToken(config.Position{Line: 2, Column: 1}, config.EOF, ""),
-		},
 		"user # comment": {
 			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
 			config.NewToken(config.Position{Line: 1, Column: 7}, config.COMMENT, " comment"),
 			config.NewToken(config.Position{Line: 1, Column: 15}, config.EOF, ""),
+		},
+		"user=\n": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 6}, config.VALUE, ""),
+			config.NewToken(config.Position{Line: 2, Column: 1}, config.EOF, ""),
+		},
+		"user=john": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 6}, config.VALUE, "john"),
+			config.NewToken(config.Position{Line: 1, Column: 10}, config.EOF, ""),
+		},
+		"user=john\n": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 6}, config.VALUE, "john"),
+			config.NewToken(config.Position{Line: 2, Column: 1}, config.EOF, ""),
+		},
+		"user=\"john\"": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 7}, config.VALUE, "john"),
+			config.NewToken(config.Position{Line: 1, Column: 12}, config.EOF, ""),
+		},
+		"user=\"jo#hn\"": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 7}, config.VALUE, "jo#hn"),
+			config.NewToken(config.Position{Line: 1, Column: 13}, config.EOF, ""),
+		},
+		"user=\"jo;hn\"": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 7}, config.VALUE, "jo;hn"),
+			config.NewToken(config.Position{Line: 1, Column: 13}, config.EOF, ""),
+		},
+		"user=john;comment": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 6}, config.VALUE, "john"),
+			config.NewToken(config.Position{Line: 1, Column: 11}, config.COMMENT, "comment"),
+			config.NewToken(config.Position{Line: 1, Column: 18}, config.EOF, ""),
+		},
+		"user=john#comment": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 6}, config.VALUE, "john"),
+			config.NewToken(config.Position{Line: 1, Column: 11}, config.COMMENT, "comment"),
+			config.NewToken(config.Position{Line: 1, Column: 18}, config.EOF, ""),
+		},
+		"user=john\\\\": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 6}, config.VALUE, "john\\"),
+			config.NewToken(config.Position{Line: 1, Column: 12}, config.EOF, ""),
+		},
+		"user=john\\\"": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 6}, config.VALUE, "john\""),
+			config.NewToken(config.Position{Line: 1, Column: 12}, config.EOF, ""),
+		},
+		"user=john\\t": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 6}, config.VALUE, "john\t"),
+			config.NewToken(config.Position{Line: 1, Column: 12}, config.EOF, ""),
+		},
+		"user=john\\b": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 6}, config.VALUE, "john\b"),
+			config.NewToken(config.Position{Line: 1, Column: 12}, config.EOF, ""),
+		},
+		"user=john\\n": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 6}, config.VALUE, "john\n"),
+			config.NewToken(config.Position{Line: 1, Column: 12}, config.EOF, ""),
+		},
+		"user=john \\\n doe": {
+			config.NewToken(config.Position{Line: 1, Column: 1}, config.KEY, "user"),
+			config.NewToken(config.Position{Line: 1, Column: 6}, config.VALUE, "john  doe"),
+			config.NewToken(config.Position{Line: 2, Column: 5}, config.EOF, ""),
 		},
 	}
 
@@ -115,19 +183,24 @@ func TestLex(t *testing.T) {
 
 func TestLex_Panics(t *testing.T) {
 	testcases := map[string]string{
-		"[core":                 "missing ] character (1:6)",
-		"[core \t ":             "missing ] character (1:9)",
-		"[\ncore]":              "missing ] character (1:2)",
-		"[co\nre]":              "missing ] character (1:4)",
-		"[core\n]":              "missing ] character (1:6)",
-		"[remote origin]":       "missing \" character (1:9)",
-		"[remote \"ori\ngin\"]": "missing \" character (1:13)",
-		"[remote \"ori":         "missing \" character (1:13)",
-		"[remote \"origin\"":    "missing ] character (1:17)",
-		"[\nremote \"origin\"]": "missing ] character (1:2)",
-		"[remote\n\"origin\"]":  "missing ] character (1:8)",
-		"[remote \"origin\"\n]": "missing ] character (1:17)",
-		"user]123":              "invalid character ] (1:5)",
+		"[core":                    "missing ] character (1:6)",
+		"[core \t ":                "missing ] character (1:9)",
+		"[\ncore]":                 "missing ] character (1:2)",
+		"[co\nre]":                 "missing ] character (1:4)",
+		"[core\n]":                 "missing ] character (1:6)",
+		"[remote origin]":          "missing \" character (1:9)",
+		"[remote \"ori\ngin\"]":    "missing \" character (1:13)",
+		"[remote \"ori":            "missing \" character (1:13)",
+		"[remote \"origin\"":       "missing ] character (1:17)",
+		"[\nremote \"origin\"]":    "missing ] character (1:2)",
+		"[remote\n\"origin\"]":     "missing ] character (1:8)",
+		"[remote \"origin\"\n]":    "missing ] character (1:17)",
+		"user]123":                 "invalid character ] (1:5)",
+		"user=\"":                  "missing \" character (1:7)",
+		"user=\"john":              "missing \" character (1:11)",
+		"user=\"john\n":            "missing \" character (1:11)",
+		"user=\"john\\a\"":         "invalid escape sequence \\a (1:11)",
+		"user=\"john\\a ; comment": "invalid escape sequence \\a (1:11)",
 	}
 
 	for input, expected := range testcases {

@@ -21,13 +21,24 @@ const (
 	SUBSECTION
 	COMMENT
 	KEY
+	VALUE
 )
 
 const (
 	ERR_MISSING_CLOSING_BRACKET string = "missing ] character (%d:%d)"
 	ERR_MISSING_QUOTE           string = "missing \" character (%d:%d)"
 	ERR_INVALID_CHARACTER       string = "invalid character %s (%d:%d)"
+	ERR_INVALID_ESCAPE          string = "invalid escape sequence %s (%d:%d)"
 )
+
+var VALUE_ESCAPE_MAP = map[rune]string{
+	'\\': "\\",
+	'"':  "\"",
+	't':  "\t",
+	'b':  "\b",
+	'n':  "\n",
+	'\n': "",
+}
 
 type Token struct {
 	Pos    Position
@@ -76,8 +87,6 @@ func (l *Lexer) Lex() []Token {
 			l.lexSection()
 		} else if r == ';' || r == '#' {
 			l.lexComment()
-		} else if r == '=' {
-			l.lexValue()
 		} else {
 			l.unreadRune()
 			l.lexKey()
@@ -181,9 +190,15 @@ func (l *Lexer) lexKey() {
 	for {
 		r := l.readNextRune()
 
-		if r == '\n' || r == rune(0) || r == '=' || unicode.IsSpace(r) {
+		if r == '\n' || r == rune(0) || unicode.IsSpace(r) {
 			l.unreadRune()
 			l.tokens = append(l.tokens, NewToken(pos, KEY, literal))
+			return
+		} else if r == '=' {
+			l.tokens = append(l.tokens, NewToken(pos, KEY, literal))
+			l.readNextNonSpaceRune()
+			l.unreadRune()
+			l.lexValue()
 			return
 		} else if unicode.IsDigit(r) || unicode.IsLetter(r) || r == '-' {
 			literal += string(r)
@@ -194,7 +209,50 @@ func (l *Lexer) lexKey() {
 }
 
 func (l *Lexer) lexValue() {
-	// TODO
+	quoted := false
+	r := l.readNextRune()
+	if r == '"' {
+		quoted = true
+	} else {
+		l.unreadRune()
+	}
+
+	literal := ""
+	pos := l.getNextPos()
+	for {
+		r := l.readNextRune()
+		switch r {
+		case '"':
+			l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
+			return
+		case ';', '#':
+			if quoted == true {
+				literal += string(r)
+			} else {
+				l.unreadRune()
+				l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
+				return
+			}
+		case '\n', rune(0):
+			if quoted == true {
+				panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
+			}
+			l.unreadRune()
+			l.tokens = append(l.tokens, NewToken(pos, VALUE, literal))
+			return
+		case '\\':
+			r = l.readNextRune()
+
+			escaped, ok := VALUE_ESCAPE_MAP[r]
+			if !ok {
+				panic(errors.New(fmt.Sprintf(ERR_INVALID_ESCAPE, "\\"+string(r), l.prevPos.Line, l.prevPos.Column)))
+			}
+
+			literal += escaped
+		default:
+			literal += string(r)
+		}
+	}
 }
 
 func (l *Lexer) readNextNonSpaceRune() rune {
