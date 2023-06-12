@@ -106,9 +106,7 @@ func (l *Lexer) lexSection() {
 
 func (l *Lexer) lexSubSection() {
 	literal := ""
-	l.readNextRune()
-	pos := l.pos
-	l.unreadRune()
+	pos := l.getNextPos()
 
 	for {
 		r := l.readNextRune()
@@ -166,4 +164,10 @@ func (l *Lexer) readNextRune() rune {
 func (l *Lexer) unreadRune() {
 	l.reader.UnreadRune()
 	l.pos.Column -= 1
+}
+
+func (l *Lexer) getNextPos() Position {
+	pos := l.pos
+	pos.Column++
+	return pos
 }
