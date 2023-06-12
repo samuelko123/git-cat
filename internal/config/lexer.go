@@ -74,7 +74,7 @@ func (l *Lexer) Lex() []Token {
 	for {
 		r := l.readNextRune()
 
-		if r == rune(0) {
+		if isEOF(r) {
 			l.tokens = append(l.tokens, NewToken(l.currPos, EOF, ""))
 			return l.tokens
 		}
@@ -113,7 +113,7 @@ func (l *Lexer) lexSection() {
 			r := l.readNextNonSpaceRune()
 			if r == ']' {
 				return
-			} else if r == '\n' || r == rune(0) {
+			} else if r == '\n' || isEOF(r) {
 				panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
 			} else if r != '"' {
 				panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
@@ -190,7 +190,7 @@ func (l *Lexer) lexKey() {
 	for {
 		r := l.readNextRune()
 
-		if r == '\n' || r == rune(0) || unicode.IsSpace(r) {
+		if r == '\n' || isEOF(r) || unicode.IsSpace(r) {
 			l.unreadRune()
 			l.tokens = append(l.tokens, NewToken(pos, KEY, literal))
 			return
@@ -302,4 +302,8 @@ func isAlphanumeric(r rune) bool {
 
 func isValidKeyChar(r rune) bool {
 	return isAlphanumeric(r) || r == '-'
+}
+
+func isEOF(r rune) bool {
+	return r == rune(0)
 }
