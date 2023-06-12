@@ -2,6 +2,8 @@ package config
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"strings"
 	"unicode"
 )
@@ -15,6 +17,7 @@ type TokenType int
 
 const (
 	EOF TokenType = iota
+	SECTION
 )
 
 type Token struct {
@@ -56,6 +59,30 @@ func (l *Lexer) Lex() []Token {
 		if unicode.IsSpace(r) {
 			continue
 		}
+
+		if r == '[' {
+			l.lexSection()
+		}
+	}
+}
+
+func (l *Lexer) lexSection() {
+	literal := ""
+	l.readNextRune()
+	pos := l.pos
+	l.unreadRune()
+
+	for {
+		r := l.readNextRune()
+
+		if unicode.IsDigit(r) || unicode.IsLetter(r) || r == '-' || r == '.' {
+			literal += string(r)
+		} else if r == ']' {
+			l.tokens = append(l.tokens, NewToken(pos, SECTION, literal))
+			return
+		} else {
+			panic(errors.New(fmt.Sprintf("missing ] character (%d:%d)", l.pos.Line, l.pos.Column)))
+		}
 	}
 }
 
@@ -64,4 +91,9 @@ func (l *Lexer) readNextRune() rune {
 	l.pos.Column += 1
 
 	return r
+}
+
+func (l *Lexer) unreadRune() {
+	l.reader.UnreadRune()
+	l.pos.Column -= 1
 }
