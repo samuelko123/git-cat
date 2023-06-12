@@ -115,21 +115,25 @@ func (l *Lexer) lexSection() {
 			literal += string(r)
 		} else if unicode.IsSpace(r) && !isLineBreak(r) {
 			l.tokens = append(l.tokens, NewToken(pos, SECTION, literal))
-
-			r := l.readNextNonSpaceRune()
-			if r == ']' {
-				return
-			} else if r == '"' {
-				l.lexSubSection()
-				return
-			} else if isEndOfLine(r) {
-				panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
-			} else {
-				panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
-			}
+			l.handleSectionWhiteSpace()
+			return
 		} else {
 			panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
 		}
+	}
+}
+
+func (l *Lexer) handleSectionWhiteSpace() {
+	r := l.readNextNonSpaceRune()
+	if r == ']' {
+		return
+	} else if r == '"' {
+		l.lexSubSection()
+		return
+	} else if isEndOfLine(r) {
+		panic(errors.New(fmt.Sprintf(ERR_MISSING_CLOSING_BRACKET, l.currPos.Line, l.currPos.Column)))
+	} else {
+		panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
 	}
 }
 
