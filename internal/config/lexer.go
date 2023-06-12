@@ -31,6 +31,11 @@ const (
 	ERR_INVALID_ESCAPE          string = "invalid escape sequence %s (%d:%d)"
 )
 
+var SUBSECTION_ESCAPE_MAP = map[rune]string{
+	'\\': "\\",
+	'"':  "\"",
+}
+
 var VALUE_ESCAPE_MAP = map[rune]string{
 	'\\': "\\",
 	'"':  "\"",
@@ -140,10 +145,10 @@ func (l *Lexer) lexSubSection() {
 		switch r {
 		case '\\':
 			r = l.readNextRune()
-			if r == '"' {
-				literal += "\""
-			} else if r == '\\' {
-				literal += "\\"
+
+			escaped, ok := VALUE_ESCAPE_MAP[r]
+			if ok {
+				literal += escaped
 			} else {
 				literal += string(r)
 			}
