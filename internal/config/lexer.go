@@ -247,12 +247,21 @@ func (l *Lexer) handleCharForValue(r rune, quoted bool) (done bool, str string) 
 	}
 
 	if isCommentChar(r) {
-		if quoted == false {
+		if quoted == true {
+			return false, string(r)
+		} else {
 			l.unreadRune()
 			return true, ""
 		}
+	}
 
-		return false, string(r)
+	if isEndOfLine(r) {
+		if quoted == true {
+			panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
+		} else {
+			l.unreadRune()
+			return true, ""
+		}
 	}
 
 	if r == '\\' {
@@ -264,14 +273,6 @@ func (l *Lexer) handleCharForValue(r rune, quoted bool) (done bool, str string) 
 		}
 
 		return false, escaped
-	}
-
-	if isEndOfLine(r) {
-		if quoted == true {
-			panic(errors.New(fmt.Sprintf(ERR_MISSING_QUOTE, l.currPos.Line, l.currPos.Column)))
-		}
-		l.unreadRune()
-		return true, ""
 	}
 
 	return false, string(r)
