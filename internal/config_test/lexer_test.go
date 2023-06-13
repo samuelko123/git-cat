@@ -178,15 +178,10 @@ func TestLex(t *testing.T) {
 	}
 
 	for input, expected := range testcases {
-		fn := func() {
-			lexer := config.NewLexer(input)
-			lexer.Lex()
-		}
-		require.NotPanics(t, fn, "Input failed:\n"+input)
-
 		lexer := config.NewLexer(input)
-		token := lexer.Lex()
-		assert.Equal(t, expected, token, "Input:\n"+input)
+		token, err := lexer.Lex()
+		require.Nil(t, err, input)
+		assert.Equal(t, expected, token, input)
 	}
 }
 
@@ -214,11 +209,9 @@ func TestLex_Panics(t *testing.T) {
 	}
 
 	for input, expected := range testcases {
-		fn := func() {
-			lexer := config.NewLexer(input)
-			lexer.Lex()
-		}
+		lexer := config.NewLexer(input)
+		_, err := lexer.Lex()
 
-		assert.PanicsWithError(t, expected, fn, "Input:\n"+input)
+		assert.EqualError(t, err, expected, input)
 	}
 }

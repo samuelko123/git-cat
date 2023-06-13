@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
+
+	"github.com/samuelko123/git-cat/internal/utils"
 )
 
 type Position struct {
@@ -76,13 +78,15 @@ func NewLexer(input string) *Lexer {
 	}
 }
 
-func (l *Lexer) Lex() []Token {
+func (l *Lexer) Lex() (_ []Token, err error) {
+	defer utils.ReturnError(&err)
+
 	for {
 		r := l.readNextRune()
 
 		if isEOF(r) {
 			l.tokens = append(l.tokens, NewToken(l.currPos, EOF, ""))
-			return l.tokens
+			return l.tokens, nil
 		}
 
 		if unicode.IsSpace(r) {
