@@ -206,6 +206,7 @@ func TestLex_Panics(t *testing.T) {
 		"[remote \"origin\"\n]":    "missing ] character (1:17)",
 		"user]123":                 "invalid character ] (1:5)",
 		"user=\"":                  "missing \" character (1:7)",
+		"user=john\"":              "unexpected \" character (1:10)",
 		"user=\"john":              "missing \" character (1:11)",
 		"user=\"john\n":            "missing \" character (1:11)",
 		"user=\"john\\a\"":         "invalid escape sequence \\a (1:11)",

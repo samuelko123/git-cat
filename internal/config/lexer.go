@@ -27,6 +27,7 @@ const (
 const (
 	ERR_MISSING_CLOSING_BRACKET string = "missing ] character (%d:%d)"
 	ERR_MISSING_QUOTE           string = "missing \" character (%d:%d)"
+	ERR_UNEXPECTED_QUOTE        string = "unexpected \" character (%d:%d)"
 	ERR_INVALID_CHARACTER       string = "invalid character %s (%d:%d)"
 	ERR_INVALID_ESCAPE          string = "invalid escape sequence %s (%d:%d)"
 )
@@ -237,6 +238,14 @@ func (l *Lexer) lexValue() {
 }
 
 func (l *Lexer) handleCharForValue(r rune, quoted bool) (done bool, str string) {
+	if r == '"' {
+		if quoted == true {
+			return true, ""
+		} else {
+			panic(errors.New(fmt.Sprintf(ERR_UNEXPECTED_QUOTE, l.currPos.Line, l.currPos.Column)))
+		}
+	}
+
 	if isCommentChar(r) {
 		if quoted == false {
 			l.unreadRune()
@@ -244,10 +253,6 @@ func (l *Lexer) handleCharForValue(r rune, quoted bool) (done bool, str string) 
 		}
 
 		return false, string(r)
-	}
-
-	if r == '"' {
-		return true, ""
 	}
 
 	if r == '\\' {
