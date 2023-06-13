@@ -61,10 +61,10 @@ func NewToken(pos Position, tType TokenType, tValue string) Token {
 }
 
 type Lexer struct {
-	currPos  Position
-	prevPos  Position
 	reader   *bufio.Reader
 	tokens   []Token
+	currPos  Position
+	prevPos  Position
 	currRune rune
 	prevRune rune
 }
